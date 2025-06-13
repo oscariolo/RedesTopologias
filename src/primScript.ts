@@ -1,6 +1,5 @@
 import { Topology, TopologyNode, TopologyEdge } from "./topology";
 
-// Prim algorithm and its helper functions now reside here.
 function buildAdjacencyList(topology: Topology): Map<number, { to: number; weight: number }[]> {
   const adj = new Map<number, { to: number; weight: number }[]>();
   topology.nodes.forEach(node => adj.set(node.id, []));
@@ -38,10 +37,16 @@ function primAlgorithm(topology: Topology, startId: number): TopologyEdge[] {
 
 let drawnNodes: TopologyNode[] = [];
 let drawnEdges: TopologyEdge[] = [];
-let drawingMode = true;
-let selectedStartNodeId: number | null = null; // already nullable
-let dragSourceNodeId: number | null = null;
+let dragSourceNodeId: number | null = null; 
 let dragCurrentPos: { x: number; y: number } | null = null;
+let pointerDownPos: { x: number; y: number } | null = null;
+
+function getNextNodeId(): number {
+  let id = 0;
+  const usedIds = new Set(drawnNodes.map(n => n.id));
+  while (usedIds.has(id)) { id++; }
+  return id;
+}
 
 function getTopology(): Topology {
   return new Topology(drawnNodes, drawnEdges);
@@ -54,6 +59,7 @@ function getOrCreateCanvas(): HTMLCanvasElement {
     canvas.id = 'graphCanvas';
     canvas.width = 600;
     canvas.height = 400;
+    canvas.style.backgroundColor = '#f0f0f0';
     const container = document.getElementById('canvasContainer') || document.querySelector('.container');
     container?.appendChild(canvas);
   }
@@ -63,37 +69,24 @@ function getOrCreateCanvas(): HTMLCanvasElement {
 function drawTopology(): void {
   const canvas = getOrCreateCanvas();
   const topology = getTopology();
-  // When drawing, always highlight the first placed node as start
-  if (drawingMode) {
-    // Pass drawnNodes[0].id (if exists) as selected node to highlight it.
-    topology.draw(canvas, undefined, drawnNodes.length > 0 ? drawnNodes[0].id : undefined, undefined);
-    if (dragSourceNodeId !== null && dragCurrentPos) {
-      const ctx = canvas.getContext('2d');
-      if (ctx) {
-        const src = drawnNodes.find(n => n.id === dragSourceNodeId);
-        if (src) {
-          ctx.strokeStyle = 'rgba(0,0,255,0.7)';
-          ctx.lineWidth = 2;
-          ctx.setLineDash([5, 5]);
-          ctx.beginPath();
-          ctx.moveTo(src.x, src.y);
-          ctx.lineTo(dragCurrentPos.x, dragCurrentPos.y);
-          ctx.stroke();
-          ctx.setLineDash([]);
-        }
+  const startNode = drawnNodes.length > 0 ? drawnNodes[0].id : undefined;
+  topology.draw(canvas, undefined, startNode, undefined);
+  
+  if (dragSourceNodeId !== null && dragCurrentPos) {
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      const src = drawnNodes.find(n => n.id === dragSourceNodeId);
+      if (src) {
+        ctx.strokeStyle = 'rgba(0,0,255,0.7)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 5]);
+        ctx.beginPath();
+        ctx.moveTo(src.x, src.y);
+        ctx.lineTo(dragCurrentPos.x, dragCurrentPos.y);
+        ctx.stroke();
+        ctx.setLineDash([]);
       }
     }
-  } else {
-    let startNode = selectedStartNodeId;
-    if (startNode === null && drawnNodes.length > 0) {
-      startNode = drawnNodes[0].id;
-    }
-    let algorithmEdges: TopologyEdge[] | undefined;
-    if (startNode !== null) {
-      algorithmEdges = primAlgorithm(topology, startNode);
-    }
-    // In selection mode, highlight the chosen start node.
-    topology.draw(canvas, algorithmEdges, startNode ?? undefined, undefined);
   }
 }
 
@@ -104,87 +97,70 @@ window.addEventListener('load', () => {
     const rect = canvas.getBoundingClientRect();
     const posX = e.clientX - rect.left;
     const posY = e.clientY - rect.top;
-    if (drawingMode) {
-      let clickedOnNode = false;
-      for (const node of drawnNodes) {
-        const dx = node.x - posX;
-        const dy = node.y - posY;
-        if (Math.sqrt(dx * dx + dy * dy) <= 10) {
-          dragSourceNodeId = node.id;
-          dragCurrentPos = { x: posX, y: posY };
-          clickedOnNode = true;
-          break;
-        }
-      }
-      if (!clickedOnNode) {
-        const newNode: TopologyNode = { id: drawnNodes.length, x: posX, y: posY };
-        drawnNodes.push(newNode);
-        drawTopology();
-      }
+    pointerDownPos = { x: posX, y: posY };
+    const hitNode = drawnNodes.find(node => Math.hypot(node.x - posX, node.y - posY) <= 10);
+    if (hitNode) {
+      dragSourceNodeId = hitNode.id;
+      dragCurrentPos = { x: posX, y: posY };
     } else {
-      // In selection mode, only allow choosing a start node.
-      for (const node of drawnNodes) {
-        const dx = node.x - posX;
-        const dy = node.y - posY;
-        if (Math.sqrt(dx * dx + dy * dy) <= 10) {
-          if (selectedStartNodeId === null) {
-            selectedStartNodeId = node.id;
-            console.log("Selected start node: " + node.id);
-          }
-          drawTopology();
-          break;
-        }
-      }
+      dragSourceNodeId = null;
     }
   });
   
   canvas.addEventListener('pointermove', (e: PointerEvent) => {
-    if (drawingMode && dragSourceNodeId !== null) {
+    if (dragSourceNodeId !== null) {
       const rect = canvas.getBoundingClientRect();
       dragCurrentPos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
       drawTopology();
     }
   });
+
+   // ADD CONTEXTMENU EVENT HANDLER FOR NODE DELETION:
+  canvas.addEventListener('contextmenu', (e: MouseEvent) => {
+    e.preventDefault();
+    const rect = canvas.getBoundingClientRect();
+    const posX = e.clientX - rect.left;
+    const posY = e.clientY - rect.top;
+    const target = drawnNodes.find(node => Math.hypot(node.x - posX, node.y - posY) <= 10);
+    if (target) {
+      // Remove the node and its connected edges.
+      drawnNodes = drawnNodes.filter(n => n.id !== target.id);
+      drawnEdges = drawnEdges.filter(edge => edge.from !== target.id && edge.to !== target.id);
+      drawTopology();
+    }
+  });
   
   canvas.addEventListener('pointerup', (e: PointerEvent) => {
-    if (drawingMode && dragSourceNodeId !== null) {
-      const rect = canvas.getBoundingClientRect();
-      const posX = e.clientX - rect.left;
-      const posY = e.clientY - rect.top;
-      let targetNode: TopologyNode | undefined;
-      for (const node of drawnNodes) {
-        const dx = node.x - posX;
-        const dy = node.y - posY;
-        if (Math.sqrt(dx * dx + dy * dy) <= 10) {
-          targetNode = node;
-          break;
-        }
-      }
+    const rect = canvas.getBoundingClientRect();
+    const posX = e.clientX - rect.left;
+    const posY = e.clientY - rect.top;
+    
+    if (dragSourceNodeId !== null) {
+      const targetNode = drawnNodes.find(node => Math.hypot(node.x - posX, node.y - posY) <= 10);
       if (targetNode && targetNode.id !== dragSourceNodeId) {
         const weightInput = window.prompt("Enter weight for the edge from node " + dragSourceNodeId + " to node " + targetNode.id, "1");
         const weight = weightInput ? parseFloat(weightInput) : 1;
         drawnEdges.push({ from: dragSourceNodeId, to: targetNode.id, weight });
       }
-      dragSourceNodeId = null;
-      dragCurrentPos = null;
-      drawTopology();
+    } else if (pointerDownPos !== null) {
+      const dx = posX - pointerDownPos.x;
+      const dy = posY - pointerDownPos.y;
+      if (Math.hypot(dx, dy) < 5) {
+        const newId = getNextNodeId();
+        drawnNodes.push({ id: newId, x: posX, y: posY });
+      }
     }
+    
+    dragSourceNodeId = null;
+    dragCurrentPos = null;
+    pointerDownPos = null;
+    drawTopology();
   });
   
   canvas.addEventListener('pointerleave', () => {
-    if (drawingMode) {
-      dragSourceNodeId = null;
-      dragCurrentPos = null;
-      drawTopology();
-    }
-  });
-  
-  const finishBtn = document.getElementById('finishTopologyBtn') as HTMLButtonElement;
-  finishBtn?.addEventListener('click', () => {
-    drawingMode = false;
-    if (drawnNodes.length > 0 && selectedStartNodeId === null) {
-      selectedStartNodeId = drawnNodes[0].id;
-    }
+    dragSourceNodeId = null;
+    dragCurrentPos = null;
+    pointerDownPos = null;
     drawTopology();
   });
   
@@ -192,26 +168,21 @@ window.addEventListener('load', () => {
   runAlgoBtn?.addEventListener('click', () => {
     const startInputRaw = (document.getElementById('startNodeInput') as HTMLInputElement)?.value;
     const startInput = startInputRaw.trim();
-    // Using strict check so that "0" is a valid value.
+    let startId: number;
     if (startInput !== "") {
       const parsedStart = parseInt(startInput, 10);
       if (!isNaN(parsedStart)) {
-        selectedStartNodeId = parsedStart;
-        console.log("Parsed start node:", parsedStart);
+        startId = parsedStart;
       } else {
-        console.log("Invalid start node input, defaulting to first node.");
-        selectedStartNodeId = drawnNodes[0].id;
+        startId = drawnNodes[0]?.id ?? 0;
       }
     } else {
-      console.log("Start input empty, defaulting to first node.");
-      selectedStartNodeId = drawnNodes[0].id;
+      startId = drawnNodes[0]?.id ?? 0;
     }
-    drawTopology();
+    const topology = getTopology();
+    const algorithmEdges = primAlgorithm(topology, startId);
+    const canvas = getOrCreateCanvas();
+    topology.draw(canvas, algorithmEdges, startId, undefined);
   });
-  
   drawTopology();
-});
-
-window.addEventListener("DOMContentLoaded", () => {
-  // ...existing code if needed...
 });
