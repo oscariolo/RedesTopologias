@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Redes Topologia y correccion de errores</title>
+    <script type="module" src="/src/primScript.ts" defer></script>
+  </head>
+  <body>
+    <main class="container">
+      <button onclick="window.history.back()">Regresar</button>
+      <!-- Container where the canvas is created dynamically -->
+      <div id="canvasContainer"></div>
+      <!-- New controls for topology drawing -->
+      <button id="finishTopologyBtn">Finish Topology</button>
+      <button id="runAlgorithmBtn">Run Algorithm</button>
+      <!-- Only a start node input is needed -->
+      <div>
+        Start Node: <input id="startNodeInput" type="number" min="0" />
+      </div>
+    </main>
+  </body>
+</html>

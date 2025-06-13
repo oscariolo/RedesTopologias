@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="/src/styles.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dijkstra Shortest Path</title>
+    <script type="module" src="/src/dijkstraScript.ts" defer></script>
+  </head>
+  <body>
+    <main class="container">
+      <button onclick="window.history.back()">Regresar</button>
+      <!-- Container for dynamic canvas creation -->
+      <div id="canvasContainer"></div>
+      <!-- Controls for topology drawing and running Dijkstra -->
+      <button id="finishTopologyBtn">Finish Topology</button>
+      <button id="runAlgorithmBtn">Run Algorithm</button>
+      <div>
+        Start Node: <input id="startNodeInput" type="number" min="0" />
+        Finish Node: <input id="endNodeInput" type="number" min="0" />
+      </div>
+    </main>
+  </body>
+</html>
