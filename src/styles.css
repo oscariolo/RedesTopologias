@@ -16,7 +16,8 @@
 
 .container {
   margin: 0;
-  padding-top: 10vh;
+  height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -110,17 +111,39 @@
 
 .commonButton {
   /* Common button styles */
-  flex: 1;
-  flex-wrap: wrap;;
+  width: 100%;
+  height: 100%;
   align-self: center;
-  padding: 2rem;
-  font-size: 1rem;
-  border: none;
-  border-radius: 8px;
+  background-color: #233261;
+  color: #ffffff;
+  border: peachpuff 2px solid;
+  border-radius: 2rem;
+  padding: 1rem; /* Added padding */
+}
+
+.commonButton:hover {
+  background-color: #2b385f;
+  color: #ffffff;
   cursor: pointer;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.controls{
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  align-self: center;
+  gap: 1rem;
+}
+
+#backToMenu {
+  /* Back to menu button styles */
   width: 20%;
   height: 10%;
+  align-self: center;
+  background-color: #233261;
+  color: #ffffff;
+  border: peachpuff 2px solid;
+  border-radius: 2rem;
 }
 
 

@@ -14,14 +14,12 @@
         <!-- Ensure the canvas has no fixed width attribute -->
         <canvas id="graphCanvas"></canvas>
       </div>
-      <!-- New controls for topology drawing -->
-      <button id="runAlgorithmBtn">Run Algorithm</button>
-      <!-- Only a start node input is needed -->
-      <div>
+      <div class="controls">
         Start Node: <input id="startNodeInput" type="number" min="0" />
+        <button class="commonButton" id="runAlgorithmBtn">Ejecutar Algoritmo</button>
       </div>
 
-       <button class="commonButton" onclick="window.history.back()">Regresar</button>
+       <button id="backToMenu" class="commonButton" onclick="window.history.back()">Regresar</button>
     </main>
     <!-- Inline script to update the canvas internal dimensions on load and resize -->
     <script>

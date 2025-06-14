@@ -41,4 +41,6 @@ window.addEventListener('load', () => {
         console.log('Trama input submitted:', tramaInput.value);
       }
     });
+
+
  });
