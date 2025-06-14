@@ -54,15 +54,6 @@ function getTopology(): Topology {
 
 function getOrCreateCanvas(): HTMLCanvasElement {
   let canvas = document.getElementById('graphCanvas') as HTMLCanvasElement;
-  if (!canvas) {
-    canvas = document.createElement('canvas');
-    canvas.id = 'graphCanvas';
-    canvas.width = 600;
-    canvas.height = 400;
-    canvas.style.backgroundColor = '#f0f0f0';
-    const container = document.getElementById('canvasContainer') || document.querySelector('.container');
-    container?.appendChild(canvas);
-  }
   return canvas;
 }
 

@@ -9,15 +9,30 @@
   </head>
   <body>
     <main class="container">
-      <button onclick="window.history.back()">Regresar</button>
       <!-- Container for dynamic canvas creation -->
-      <div id="canvasContainer"></div>
+      <div id="canvasContainer">
+        <!-- Removed fixed width; the canvas will size according to CSS. -->
+        <canvas id="graphCanvas"></canvas>
+      </div>
       <!-- Controls for topology drawing and running Dijkstra -->
       <button id="runAlgorithmBtn">Run Algorithm</button>
       <div>
-        Start Node: <input id="startNodeInput" type="number" min="0" />
-        Finish Node: <input id="endNodeInput" type="number" min="0" />
+        Start Node: <input class="number-input" id="startNodeInput" type="number" min="0" />
+        Finish Node: <input class="number-input" id="endNodeInput" type="number" min="0" />
       </div>
+
+      <button class="commonButton" onclick="window.history.back()">Regresar</button>
     </main>
+    <!-- Inline script to update the canvas internal dimensions on load and resize -->
+    <script>
+      const canvas = document.getElementById("graphCanvas");
+      function resizeCanvas() {
+        // Match the canvas’s internal width/height to its CSS dimensions.
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+      }
+      window.addEventListener("load", resizeCanvas);
+      window.addEventListener("resize", resizeCanvas);
+    </script>
   </body>
 </html>

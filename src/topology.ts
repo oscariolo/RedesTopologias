@@ -36,7 +36,7 @@ export class Topology {
 			const from = this.nodes.find(n => n.id === edge.from)!;
 			const to = this.nodes.find(n => n.id === edge.to)!;
 			ctx.strokeStyle = '#ccc';
-			ctx.lineWidth = 2;
+			ctx.lineWidth = 5;
 			ctx.beginPath();
 			ctx.moveTo(from.x, from.y);
 			ctx.lineTo(to.x, to.y);
@@ -71,26 +71,31 @@ export class Topology {
 				ctx.fillText(edge.weight.toString(), midX, midY);
 			});
 		}
-		// Draw nodes and labels
+		// Draw nodes and labels with updated styling:
 		this.nodes.forEach(node => {
-			ctx.fillStyle = '#000';
+			// Draw node with white fill and black border
 			ctx.beginPath();
-			ctx.arc(node.x, node.y, 8, 0, Math.PI * 2);
+			ctx.arc(node.x, node.y, 15, 0, Math.PI * 2); // increased radius to 15
+			ctx.fillStyle = '#FFFFFF';
 			ctx.fill();
-			// Highlight selected node in blue
+			ctx.lineWidth = 2;
+			ctx.strokeStyle = '#000000';
+			ctx.stroke();
+			
+			// If selected or hovered, draw an additional highlight
 			if (selectedNodeId !== undefined && node.id === selectedNodeId) {
 				ctx.strokeStyle = 'blue';
-				ctx.lineWidth = 2;
+				ctx.lineWidth = 3;
 				ctx.stroke();
-			}
-			// Else if hovered (and not selected), highlight in yellow
-			else if (hoveredNodeId !== undefined && node.id === hoveredNodeId) {
+			} else if (hoveredNodeId !== undefined && node.id === hoveredNodeId) {
 				ctx.strokeStyle = 'yellow';
-				ctx.lineWidth = 2;
+				ctx.lineWidth = 3;
 				ctx.stroke();
 			}
-			ctx.fillStyle = '#fff';
-			ctx.font = '12px sans-serif';
+			
+			// Draw node label with bold black text
+			ctx.fillStyle = '#000000';
+			ctx.font = 'bold 16px sans-serif';
 			ctx.textAlign = 'center';
 			ctx.textBaseline = 'middle';
 			ctx.fillText(node.id.toString(), node.x, node.y);

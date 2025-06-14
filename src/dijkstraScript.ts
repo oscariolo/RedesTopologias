@@ -15,16 +15,6 @@ function getTopology(): Topology {
 // Helper to get or create the canvas.
 function getOrCreateCanvas(): HTMLCanvasElement {
   let canvas = document.getElementById('graphCanvas') as HTMLCanvasElement;
-  if (!canvas) {
-    canvas = document.createElement('canvas');
-    canvas.id = 'graphCanvas';
-    canvas.width = 1000;
-    canvas.height = 400;
-    canvas.style.border = '1px solid #ccc';
-    canvas.style.backgroundColor = '#f0f0f0';
-    const container = document.getElementById('canvasContainer') || document.querySelector('.container');
-    container?.appendChild(canvas);
-  }
   return canvas;
 }
 

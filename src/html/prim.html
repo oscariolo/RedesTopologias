@@ -8,16 +8,30 @@
     <script type="module" src="/src/primScript.ts" defer></script>
   </head>
   <body>
-    <main class="container">
-      <button onclick="window.history.back()">Regresar</button>
+    <main class="container">  
       <!-- Container where the canvas is created dynamically -->
-      <div id="canvasContainer"></div>
+      <div id="canvasContainer">
+        <!-- Ensure the canvas has no fixed width attribute -->
+        <canvas id="graphCanvas"></canvas>
+      </div>
       <!-- New controls for topology drawing -->
       <button id="runAlgorithmBtn">Run Algorithm</button>
       <!-- Only a start node input is needed -->
       <div>
         Start Node: <input id="startNodeInput" type="number" min="0" />
       </div>
+
+       <button class="commonButton" onclick="window.history.back()">Regresar</button>
     </main>
+    <!-- Inline script to update the canvas internal dimensions on load and resize -->
+    <script>
+      const canvas = document.getElementById("graphCanvas");
+      function resizeCanvas() {
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+      }
+      window.addEventListener("load", resizeCanvas);
+      window.addEventListener("resize", resizeCanvas);
+    </script>
   </body>
 </html>
