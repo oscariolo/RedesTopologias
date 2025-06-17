@@ -1,46 +1,57 @@
-let trama: string = "1101011011";
-let generator: string = "1101";
-let anexo: string = "0000"; // 4 bits for CRC-4
-
-
-function crcDivision(trama:string, generator:string): string {
-    let paddedTrama = trama + anexo;
-    let generatorLength = generator.length;
-    let paddedLength = paddedTrama.length;
-    
-    // Convert strings to arrays of bits
-    let dividend = paddedTrama.split('').map(Number);
-    let divisor = generator.split('').map(Number);
-    
-    // Perform the division
-    for (let i = 0; i <= paddedLength - generatorLength; i++) {
-        if (dividend[i] === 1) {
-        for (let j = 0; j < generatorLength; j++) {
-            dividend[i + j] ^= divisor[j]; // XOR operation
-        }
+function binaryDivision(dividend: string, divisor: string): string {
+    let paddedDividend = dividend + '0'.repeat(divisor.length - 1);
+    let dividendBits = paddedDividend.split('').map(Number);
+    let divisorBits = divisor.split('').map(Number);
+    let divisorLength = divisorBits.length;
+    let dividendLength = dividendBits.length;
+    for (let i = 0; i <= dividendLength - divisorLength; i++) {
+        if (dividendBits[i] === 1) {
+            for (let j = 0; j < divisorLength; j++) {
+                dividendBits[i + j] ^= divisorBits[j]; // XOR operation
+            }
         }
     }
-    // The remainder is the last bits of the dividend
-    return dividend.slice(paddedLength - generatorLength + 1).join('');
+    // Return the remainder as a binary string
+    return dividendBits.slice(dividendLength - divisorLength + 1).join('');
 }
 
-function simulateError(trama: string):string {
+function simulateError(trama: string, error_p:number=0.5):string {
     // Simulate a single bit error by flipping a random bit
+    //Aleatoreamente devuelve la misma trama sin error 50% de las veces
+    if (Math.random() < error_p) {
+        return trama; // No error
+    }
     let errorIndex = Math.floor(Math.random() * trama.length);
     let errorBit = trama[errorIndex] === '0' ? '1' : '0';
     return trama.substring(0, errorIndex) + errorBit + trama.substring(errorIndex + 1);
 }
 
+function crcCheck(trama: string, generator: string): boolean {
+    // Perform CRC check
+    let remainder = binaryDivision(trama, generator);
+    return remainder === '0'.repeat(generator.length - 1); // Check if remainder is all zeros
+}
+
 
 window.addEventListener('load', () => {
-  
     const tramaInput = document.getElementById('tramaInput') as HTMLInputElement;
+    
     tramaInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         // Execute your desired function here
-        console.log('Trama input submitted:', tramaInput.value);
+        runCRC();
       }
     });
-
-
  });
+
+ function runCRC() {
+    const tramaInput = document.getElementById('tramaInput') as HTMLInputElement;
+    const generatorInput = document.getElementById('generatorInput') as HTMLInputElement;
+    let trama:string = tramaInput.value;
+    let crc = binaryDivision(trama, generatorInput.value);
+    let n_trama = simulateError(trama,0.9);
+    let testDiv = binaryDivision(n_trama + crc, generatorInput.value);
+    const resultDiv = document.getElementById('result') as HTMLDivElement;
+    resultDiv.innerHTML = `Trama: ${n_trama} <br> Residue: ${testDiv}`;
+
+ }
