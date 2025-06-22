@@ -61,11 +61,34 @@
   margin-top: 2rem;
 }
 
+.icon-row a {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem;      /* added padding for a noticeable container */
+  border-radius: 0.5rem; /* rounded corners for container */
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* smooth animation */
+  text-decoration: none; /* remove underline on the entire anchor */
+}
+
+.icon-row a label {
+  text-decoration: none; /* remove underline from the label */
+}
+
+.icon-row a label:hover {
+    cursor: pointer;
+}
+
 .icon-row a img {
   width: 50px;
   height: 50px;
   cursor: pointer;
   transition: transform 0.2s ease-in-out;
+}
+
+.icon-row a:hover {
+  transform: scale(1.2); /* make the icon bigger on hover */
+  box-shadow: 0 0 10px rgba(36,200,219,0.7); /* noticeable highlight effect */
 }
 
 .icon-row a img:hover {
@@ -74,27 +97,33 @@
 
 
 
+.result-animation {
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+}
+
+.fade-in {
+  opacity: 1;
+}
+
+/* Improved input design */
 .input-container {
   /* Enhanced input container styling */
   width: 300px;
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1rem; /* increased padding */
   margin-top: 2rem;
   border: 2px solid #09122C;
   border-radius: 8px;
+  background-color: #0a162f; /* darker background */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
   font-size: 1rem;
-  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
 }
 .input-container:focus {
   outline: none;
   border-color: #24c8db;
-  box-shadow: 0 0 8px rgba(36,200,219,0.5);
-}
-
-@media (prefers-color-scheme: dark) {
-  .input-container {
-    background-color: #0f0f0f;
-    color: #ffffff;
-  }
+  box-shadow: 0 0 8px rgba(36,200,219,0.7);
+  background-color: #112240;
 }
 
 .number-input {
@@ -144,6 +173,43 @@
   color: #ffffff;
   border: peachpuff 2px solid;
   border-radius: 2rem;
+}
+
+#crcActions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* New results container styling */
+.results-container {
+    width: 300px;
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: #112240;
+    border: 2px solid #24c8db;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: center;
+}
+
+/* New result text styling */
+.result-text {
+    opacity: 0;
+    transition: opacity 0.5s ease-in-out;
+    font-size: 1.2rem;
+    color: #ffffff;
+}
+
+.fade-in {
+    opacity: 1;
+}
+
+.red-text {
+    color: red;
 }
 
 

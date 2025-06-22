@@ -47,11 +47,25 @@ window.addEventListener('load', () => {
  function runCRC() {
     const tramaInput = document.getElementById('tramaInput') as HTMLInputElement;
     const generatorInput = document.getElementById('generatorInput') as HTMLInputElement;
-    let trama:string = tramaInput.value;
+    let trama: string = tramaInput.value;
     let crc = binaryDivision(trama, generatorInput.value);
-    let n_trama = simulateError(trama,0.9);
+    let n_trama = simulateError(trama, 0.5);
     let testDiv = binaryDivision(n_trama + crc, generatorInput.value);
-    const resultDiv = document.getElementById('result') as HTMLDivElement;
-    resultDiv.innerHTML = `Trama: ${n_trama} <br> Residue: ${testDiv}`;
-
+    
+    const binaryResult = document.getElementById('binaryResult') as HTMLSpanElement;
+    const residueResult = document.getElementById('residueResult') as HTMLSpanElement;
+    
+    // Set new values with the crc part wrapped in a span for coloring
+    binaryResult.innerHTML = `Trama recibida: ${n_trama}<span class="red-text">${crc}</span>`;
+    residueResult.textContent = `Residuo con crc: ${testDiv}`;
+    binaryResult.classList.remove("fade-in");
+    residueResult.classList.remove("fade-in");
+    
+    // Trigger fade-in animations in sequence
+    setTimeout(() => {
+         binaryResult.classList.add("fade-in");
+         setTimeout(() => {
+             residueResult.classList.add("fade-in");
+         }, 700);
+    }, 100);
  }

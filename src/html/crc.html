@@ -9,16 +9,19 @@
   </head>
   <body>
     <main class="container">
-      <!-- Added buttons and output area for CRC simulation -->
       <div id="crcActions">
          <input class="input-container" id="tramaInput" placeholder="Ingrese datos en binario (e.g., 1101)"/>
          <input class="input-container" id="generatorInput" placeholder="Ingrese generador en binario (e.g., 1101)"/> 
+         <!-- Added results container -->
+         <div id="resultsContainer" class="results-container">
+            <span id="binaryResult" class="result-text"></span>
+            <span id="residueResult" class="result-text"></span>
+         </div>
          <div id="result"></div>
          <div id="output"></div>
       </div>
 
-      <button id = "backToMenu" class="commonButton" onclick="window.history.back()">Return to Menu</button>
-      
+      <button id="backToMenu" class="commonButton" onclick="window.history.back()">Return to Menu</button>
     </main>
     
     <!-- Removed inline script; CRC logic is implemented externally -->
