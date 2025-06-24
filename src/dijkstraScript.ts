@@ -5,8 +5,9 @@ let drawnNodes: TopologyNode[] = [];
 const canvas = document.getElementById('graphCanvas') as HTMLCanvasElement;
 setCanvas(canvas);
 // Dijkstra's algorithm to compute the shortest path from startId to finishId.
+// Función dijkstraAlgorithm: Calcula el camino más corto desde el nodo inicio hasta el nodo final utilizando el algoritmo de Dijkstra.
 function dijkstraAlgorithm(topology: Topology, startId: number, finishId: number): TopologyEdge[] {
-  // Build adjacency list
+  // Construir la lista de adyacencia.
   const adj = new Map<number, { to: number; weight: number }[]>();
   topology.nodes.forEach(node => adj.set(node.id, []));
   topology.edges.forEach(edge => {
@@ -14,6 +15,7 @@ function dijkstraAlgorithm(topology: Topology, startId: number, finishId: number
     adj.get(edge.to)?.push({ to: edge.from, weight: edge.weight });
   });
   
+  // Inicializar distancias y predecesores.
   const dist = new Map<number, number>();
   const prev = new Map<number, number | null>();
   topology.nodes.forEach(node => {
@@ -22,23 +24,18 @@ function dijkstraAlgorithm(topology: Topology, startId: number, finishId: number
   });
   dist.set(startId, 0);
   
-  const Q = new Set(topology.nodes.map(n => n.id));
+  // Usar un arreglo como cola de prioridad de nodos.
+  let queue = topology.nodes.map(n => n.id);
   
-  while (Q.size > 0) {
-    // Get the node in Q with the smallest distance.
-    let u: number | null = null;
-    Q.forEach(id => {
-      if (u === null || (dist.get(id)! < dist.get(u)!)) {
-        u = id;
-      }
-    });
-    if (u === null) break;
-    Q.delete(u);
-    if (u === finishId) break;
-    
+  while (queue.length > 0) {
+    // Ordenar la cola según la distancia acumulada.
+    queue.sort((a, b) => dist.get(a)! - dist.get(b)!);
+    const u = queue.shift()!;
+    if (u === finishId) break; // Si llegamos al nodo final, terminamos.
+    // Relajar las aristas de los vecinos.
     const neighbors = adj.get(u) || [];
     for (const { to, weight } of neighbors) {
-      if (!Q.has(to)) continue;
+      if (!queue.includes(to)) continue;
       const alt = dist.get(u)! + weight;
       if (alt < dist.get(to)!) {
         dist.set(to, alt);
@@ -47,22 +44,21 @@ function dijkstraAlgorithm(topology: Topology, startId: number, finishId: number
     }
   }
   
-  // Reconstruct path.
+  // Reconstruir el camino óptimo.
   const path: number[] = [];
   let u: number | null = finishId;
   while (u !== null) {
     path.unshift(u);
-    // Use nullish coalescing to allow 0 to be a valid node id.
     u = prev.get(u) ?? null;
   }
   
+  // Generar las aristas correspondientes al camino.
   const pathEdges: TopologyEdge[] = [];
   for (let i = 0; i < path.length - 1; i++) {
     const edge = topology.edges.find(e =>
-      (e.from === path[i] && e.to === path[i+1]) || (e.from === path[i+1] && e.to === path[i])
+      (e.from === path[i] && e.to === path[i + 1]) || (e.from === path[i + 1] && e.to === path[i])
     );
-    const weight = edge ? edge.weight : 0;
-    pathEdges.push({ from: path[i], to: path[i+1], weight });
+    pathEdges.push({ from: path[i], to: path[i + 1], weight: edge ? edge.weight : 0 });
   }
   return pathEdges;
 }
@@ -106,5 +102,4 @@ window.addEventListener('load', () => {
     drawTopology(topology, algorithmEdges);
   });
 });
-
 

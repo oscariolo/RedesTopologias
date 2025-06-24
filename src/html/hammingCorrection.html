@@ -6,19 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Redes Topologia y correccion de errores</title>
     <script type="module" src="/src/main.ts" defer></script>
+    <script type="module" src="/src/hammingCorrection.ts" defer></script>
   </head>
   <body>
     <main class="container">
       <h1>Redes de computador</h1>
       <h1>Trabajo final</h1>
       
-      <div class="icon-row">
-        <a href="/src/html/prim.html"><img src="/src/icons/icon1.png" alt="Page 1"></a>
-        <a href="/src/html/dijkstra.html"><img src="/src/icons/icon2.png" alt="Page 2"></a>
-        <a href="/src/html/distanceVector.html"><img src="/src/icons/icon3.png" alt="Page 3"></a>
-        <a href="/src/html/#"><img src="/src/icons/icon4.png" alt="Page 4"></a>
-        <a href="/src/html/hammingCorrection.html"><img src="/src/icons/icon5.png" alt="Page 5"></a>
-        <a href="/src/html/crc.html"><img src="/src/icons/icon6.png" alt="Page 6"></a>
+      <div class="input-container">
+        <input type="text" id="binaryInput" placeholder="Enter binary string" />
+      </div>
+      <div style="margin-top:1rem;">
+        <button id="playButton" class="commonButton">Play</button>
+      </div>
+      <div id="matrixContainer" style="margin-top:1rem;">
+        <!-- Matrix will be rendered here -->
       </div>
     </main>
   </body>
