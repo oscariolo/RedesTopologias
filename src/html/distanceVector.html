@@ -9,17 +9,14 @@
   </head>
   <body>
     <main class="container">
-      <h1>Redes de computador</h1>
-      <h1>Trabajo final</h1>
-      
-      <div class="icon-row">
-        <a href="/src/html/prim.html"><img src="/src/icons/icon1.png" alt="Page 1"></a>
-        <a href="/src/html/dijkstra.html"><img src="/src/icons/icon2.png" alt="Page 2"></a>
-        <a href="/src/html/distanceVector.html"><img src="/src/icons/icon3.png" alt="Page 3"></a>
-        <a href="/src/html/#"><img src="/src/icons/icon4.png" alt="Page 4"></a>
-        <a href="/src/html/hammingCorrection.html"><img src="/src/icons/icon5.png" alt="Page 5"></a>
-        <a href="/src/html/crc.html"><img src="/src/icons/icon6.png" alt="Page 6"></a>
+      <div id="tablesContainer">
+        <!-- Distance tables will be dynamically injected here -->
       </div>
+      <div class="options">
+        <button id="distanceVectorPlay" class="commonButton">Play</button>
+        <button class="commonButton" id="backToMenu" onclick="window.history.back()">Regresar</button>
+      </div> 
     </main>
+    
   </body>
 </html>
