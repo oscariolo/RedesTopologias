@@ -169,5 +169,12 @@ function graphInTable(table: NodeTable | undefined, nodeId: string) {
       }
     } else {
       console.warn(`No table found for node ${nodeId}`);
+      // Clear the table display
+        const tableElement = document.getElementById('nodeTable');
+        if (tableElement) {
+            tableElement.innerHTML = `
+                <p></p>
+            `;
+            }
     }
 }

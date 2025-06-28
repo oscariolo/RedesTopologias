@@ -143,6 +143,7 @@ export function drawTopology(topology: Topology, algorithmEdges?: TopologyEdge[]
 window.addEventListener('load', () => {
   
   canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+    if(e.button !== 0) return; // Only handle left button clicks
     const rect = canvas.getBoundingClientRect();
     const posX = e.clientX - rect.left;
     const posY = e.clientY - rect.top;
@@ -216,11 +217,6 @@ window.addEventListener('load', () => {
     }
   });
   
-  canvas.addEventListener('pointerleave', () => {
-    dragSourceNodeId = null;
-    dragCurrentPos = null;
-    pointerDownPos = null;
-    drawTopology(getCurrentTopology(), undefined);
-  });
+
   
 });
