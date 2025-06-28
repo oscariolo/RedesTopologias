@@ -2,20 +2,37 @@ import { Topology, TopologyEdge, TopologyNode } from "./topology";
 
 let drawnNodes: TopologyNode[] = [];
 let drawnEdges: TopologyEdge[] = [];
-let dragSourceNodeId: number | null = null;
+let dragSourceNodeId: string | null = null;
 let dragCurrentPos: { x: number; y: number } | null = null;
 let canvas: HTMLCanvasElement;
 let pointerDownPos: { x: number; y: number } | null = null;
+
+// Callback system for topology updates
+type TopologyUpdateCallback = (topology: Topology) => void;
+let topologyUpdateCallbacks: TopologyUpdateCallback[] = [];
+
+export function onTopologyUpdate(callback: TopologyUpdateCallback) {
+  topologyUpdateCallbacks.push(callback);
+}
+
+export function offTopologyUpdate(callback: TopologyUpdateCallback) {
+  topologyUpdateCallbacks = topologyUpdateCallbacks.filter(cb => cb !== callback);
+}
+
+function emitTopologyUpdate() {
+  const topology = getCurrentTopology();
+  topologyUpdateCallbacks.forEach(callback => callback(topology));
+}
 
 export function setCanvas(newCanvas: HTMLCanvasElement) {
     canvas = newCanvas;
 }
 
-function getNextNodeId(): number {
+function getNextNodeId(): string {
   let id = 0;
-  const usedIds = new Set(drawnNodes.map(n => n.id));
+  const usedIds = new Set(drawnNodes.map(n => parseInt(n.id)));
   while (usedIds.has(id)) { id++; }
-  return id;
+  return id.toString();
 }
 
 export function getCurrentTopology(): Topology {
@@ -143,6 +160,7 @@ window.addEventListener('load', () => {
       drawnNodes = drawnNodes.filter(n => n.id !== target.id);
       drawnEdges = drawnEdges.filter(edge => edge.from !== target.id && edge.to !== target.id);
       drawTopology(getCurrentTopology(), undefined);
+      emitTopologyUpdate(); // Emit signal when topology changes
     }
   });
   
@@ -151,12 +169,15 @@ window.addEventListener('load', () => {
     const posX = e.clientX - rect.left;
     const posY = e.clientY - rect.top;
     
+    let topologyChanged = false;
+    
     if (dragSourceNodeId !== null) {
       const targetNode = drawnNodes.find(node => Math.hypot(node.x - posX, node.y - posY) <= 10);
       if (targetNode && targetNode.id !== dragSourceNodeId) {
         const weightInput = window.prompt("Enter weight for the edge from node " + dragSourceNodeId + " to node " + targetNode.id, "1");
         const weight = weightInput ? parseFloat(weightInput) : 1;
         drawnEdges.push({ from: dragSourceNodeId, to: targetNode.id, weight });
+        topologyChanged = true;
       }
     } else if (pointerDownPos !== null) {
       const dx = posX - pointerDownPos.x;
@@ -164,6 +185,7 @@ window.addEventListener('load', () => {
       if (Math.hypot(dx, dy) < 5) {
         const newId = getNextNodeId();
         drawnNodes.push({ id: newId, x: posX, y: posY });
+        topologyChanged = true;
       }
     }
     
@@ -171,6 +193,10 @@ window.addEventListener('load', () => {
     dragCurrentPos = null;
     pointerDownPos = null;
     drawTopology(getCurrentTopology(), undefined);
+    
+    if (topologyChanged) {
+      emitTopologyUpdate(); // Emit signal when topology changes
+    }
   });
   
   canvas.addEventListener('pointerleave', () => {

@@ -5,10 +5,14 @@
     <link rel="stylesheet" href="/src/styles.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Redes Topologia y correccion de errores</title>
-    <script type="module" src="/src/main.ts" defer></script>
+    <script type="module" src="/src/distanceVector.ts" defer></script>
   </head>
   <body>
     <main class="container">
+      <div id="canvasContainer">
+        <!-- Removed fixed width; the canvas will size according to CSS. -->
+        <canvas id="graphCanvas"></canvas>
+      </div>
       <div id="tablesContainer">
         <!-- Distance tables will be dynamically injected here -->
       </div>
@@ -18,5 +22,16 @@
       </div> 
     </main>
     
+    <!-- Inline script to update the canvas internal dimensions on load and resize -->
+    <script>
+      const canvas = document.getElementById("graphCanvas");
+      function resizeCanvas() {
+        // Match the canvas's internal width/height to its CSS dimensions.
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
+      }
+      window.addEventListener("load", resizeCanvas);
+      window.addEventListener("resize", resizeCanvas);
+    </script>
   </body>
 </html>

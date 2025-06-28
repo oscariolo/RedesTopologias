@@ -6,9 +6,9 @@ const canvas = document.getElementById('graphCanvas') as HTMLCanvasElement;
 setCanvas(canvas);
 // Dijkstra's algorithm to compute the shortest path from startId to finishId.
 // Función dijkstraAlgorithm: Calcula el camino más corto desde el nodo inicio hasta el nodo final utilizando el algoritmo de Dijkstra.
-function dijkstraAlgorithm(topology: Topology, startId: number, finishId: number): TopologyEdge[] {
+function dijkstraAlgorithm(topology: Topology, startId: string, finishId: string): TopologyEdge[] {
   // Construir la lista de adyacencia.
-  const adj = new Map<number, { to: number; weight: number }[]>();
+  const adj = new Map<String, { to: string; weight: number }[]>();
   topology.nodes.forEach(node => adj.set(node.id, []));
   topology.edges.forEach(edge => {
     adj.get(edge.from)?.push({ to: edge.to, weight: edge.weight });
@@ -16,8 +16,8 @@ function dijkstraAlgorithm(topology: Topology, startId: number, finishId: number
   });
   
   // Inicializar distancias y predecesores.
-  const dist = new Map<number, number>();
-  const prev = new Map<number, number | null>();
+  const dist = new Map<string, number>();
+  const prev = new Map<string, string | null>();
   topology.nodes.forEach(node => {
     dist.set(node.id, Infinity);
     prev.set(node.id, null);
@@ -45,8 +45,8 @@ function dijkstraAlgorithm(topology: Topology, startId: number, finishId: number
   }
   
   // Reconstruir el camino óptimo.
-  const path: number[] = [];
-  let u: number | null = finishId;
+  const path: string[] = [];
+  let u: string | null = finishId;
   while (u !== null) {
     path.unshift(u);
     u = prev.get(u) ?? null;
@@ -75,28 +75,18 @@ window.addEventListener('load', () => {
     const endInputRaw = (document.getElementById('endNodeInput') as HTMLInputElement)?.value;
     const startInput = startInputRaw.trim();
     const endInput = endInputRaw.trim();
-    let startId: number;
+    let startId: string;
     if (startInput !== "") {
-      const parsedStart = parseInt(startInput, 10);
-      if (!isNaN(parsedStart)) {
-        startId = parsedStart;
-      } else {
-        startId = drawnNodes[0]?.id ?? 0;
-      }
+      startId = startInput;
     } else {
-      startId = drawnNodes[0]?.id ?? 0;
+      startId = drawnNodes[0]?.id ?? "0";
     }
     const topology = getCurrentTopology();
-    let finishId: number;
+    let finishId: string;
     if (endInput !== "") {
-      const parsedEnd = parseInt(endInput, 10);
-      if (!isNaN(parsedEnd)) {
-        finishId = parsedEnd;
-      } else {
-        finishId = getDrawnNodes()[0]?.id ?? 0;
-      }
+      finishId = endInput;
     } else {
-      finishId = drawnNodes[0]?.id ?? 0;
+      finishId = drawnNodes[0]?.id ?? "0";
     }
     const algorithmEdges = dijkstraAlgorithm(topology, startId,finishId);
     drawTopology(topology, algorithmEdges);

@@ -1,12 +1,12 @@
 export interface TopologyNode {
-	id: number;
+	id: string;
 	x: number;
 	y: number;
 }
 
 export interface TopologyEdge {
-	from: number;
-	to: number;
+	from:  string;
+	to:  string;
 	weight: number;
 }
 
