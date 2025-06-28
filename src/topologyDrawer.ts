@@ -11,6 +11,22 @@ let pointerDownPos: { x: number; y: number } | null = null;
 type TopologyUpdateCallback = (topology: Topology) => void;
 let topologyUpdateCallbacks: TopologyUpdateCallback[] = [];
 
+// Callback system for node press events
+type NodePressCallback = (nodeId: string) => void;
+let nodePressCallbacks: NodePressCallback[] = [];
+
+export function onNodePress(callback: NodePressCallback) {
+  nodePressCallbacks.push(callback);
+}
+
+export function offNodePress(callback: NodePressCallback) {
+  nodePressCallbacks = nodePressCallbacks.filter(cb => cb !== callback);
+}
+
+function emitNodePress(nodeId: string) {
+  nodePressCallbacks.forEach(callback => callback(nodeId));
+}
+
 export function onTopologyUpdate(callback: TopologyUpdateCallback) {
   topologyUpdateCallbacks.push(callback);
 }
@@ -135,6 +151,7 @@ window.addEventListener('load', () => {
     if (hitNode) {
       dragSourceNodeId = hitNode.id;
       dragCurrentPos = { x: posX, y: posY };
+      emitNodePress(hitNode.id); // Emit node press event
     } else {
       dragSourceNodeId = null;
     }
