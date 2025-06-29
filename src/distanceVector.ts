@@ -1,5 +1,5 @@
 import { Topology,  TopologyEdge } from "./topology";
-import { getCurrentTopology, setCanvas, onTopologyUpdate, onNodePress } from "./topologyDrawer";
+import {setCanvas, onTopologyUpdate, onNodePress, getCurrentTopology } from "./topologyDrawer";
 
 /**
  * Represents the stored distances of a single node to all other nodes.
@@ -7,13 +7,26 @@ import { getCurrentTopology, setCanvas, onTopologyUpdate, onNodePress } from "./
 const canvas = document.getElementById('graphCanvas') as HTMLCanvasElement;
 setCanvas(canvas);
 
+
 class NodeTable {
   nodeId: string;
   vector: Map<string, DistanceToNode>;
 
-  constructor(nodeId: string) {
-    this.nodeId = nodeId;
-    this.vector = new Map<string, DistanceToNode>();
+  // now accepts either a nodeId or another NodeTable to clone
+  constructor(source: string | NodeTable) {
+    if (typeof source === "string") {
+      // normal construction
+      this.nodeId = source;
+      this.vector = new Map<string, DistanceToNode>();
+    } else {
+      // clone constructor
+      this.nodeId = source.nodeId;
+      // shallow‐copy each entry in the vector
+      this.vector = new Map<string, DistanceToNode>();
+      source.vector.forEach((info, key) => {
+        this.vector.set(key, { distance: info.distance, fromNodeId: info.fromNodeId });
+      });
+    }
   }
 
   equals(other: NodeTable): boolean {
@@ -58,50 +71,29 @@ function constructBaseTableForNode(nodeId:string,topology: Topology): NodeTable 
     return nodeTable;
 }
 
-function getTableForNode(nodeId: string, nodeTables: NodeTable[]): NodeTable {
+function getTableForNode(nodeId: string, nodeTables: NodeTable[], topology:Topology): NodeTable {
     let table = NodeTable.findByNodeId(nodeTables, nodeId);
     if (!table) {
-        table = constructBaseTableForNode(nodeId, getCurrentTopology());
+        table = constructBaseTableForNode(nodeId, topology);
         nodeTables.push(table);
     }
     return table;
 }
 
-function vectorDistanceAlgorithm(topology: Topology): NodeTable[] {
-    let nodeTables: NodeTable[] = [];
-
-    for (const nodeTable of topology.nodes) {
-        let nodeId = nodeTable.id;
-        let currentTable = getTableForNode(nodeId, nodeTables);
-        if (!currentTable) {
-            currentTable = constructBaseTableForNode(nodeId, topology);
-            nodeTables.push(currentTable);
-        }
-    }
-    let updated = true;
-    while (updated) {
-        updated = false;
-        for (const nodeTable of nodeTables) {
-            let currentNodeId = nodeTable.nodeId;
-            let neighbors = getNeighbors(currentNodeId, topology);
-            for (const edge of neighbors) {
-                let neighborId = edge.from === currentNodeId ? edge.to : edge.from;
-                let neighborTable = getTableForNode(neighborId, nodeTables);
-                if (!neighborTable) continue;
-                // Check if the distance can be improved
-                for (const [targetNodeId, distanceInfo] of nodeTable.vector.entries()) {
-                    if (distanceInfo.distance + edge.weight < neighborTable.vector.get(targetNodeId)!.distance) {
-                        neighborTable.vector.set(targetNodeId, {
-                            distance: distanceInfo.distance + edge.weight,
-                            fromNodeId: currentNodeId
-                        });
-                        updated = true;
-                    }
-                }
+function getNeighborTables(nodeId: string, nodeTables: NodeTable[], topology:Topology): NodeTable[] {
+    let neighborTables: NodeTable[] = [];
+    let neighbors = getNeighbors(nodeId, topology);
+    for(const table of nodeTables){
+        if (neighbors.some(edge => edge.from === table.nodeId || edge.to === table.nodeId)) {
+            //no agregamos el mismo nodo id 
+            if (table.nodeId !== nodeId) {
+                neighborTables.push(table);
             }
         }
     }
-    return nodeTables;
+
+
+    return neighborTables
 }
 
 
@@ -112,26 +104,69 @@ window.addEventListener('load', () => {
     return;
   }
   let nodeTables: NodeTable[] = [];
-  let pressedNodeId: string | null = null;
+  let pressedNodeId: string | undefined;
+
+  const playbtn = document.getElementById('distanceVectorPlay') as HTMLButtonElement;
+  playbtn.addEventListener('click', () => {
+    // Clear the table display
+    distanceVectorAlgorithm(pressedNodeId || "0", nodeTables, getCurrentTopology());
+    graphInTable(nodeTables.find(table => table.nodeId === pressedNodeId), pressedNodeId || "");
+  });
+
+
   onNodePress((nodeId: string) => {
-    console.log("Node pressed:", nodeId);
     pressedNodeId = nodeId;
     //Obtenemos la tabla del nodo presionado
     let table: NodeTable| undefined = NodeTable.findByNodeId(nodeTables, nodeId);
-    //injectamos la tabla en el documento 
     graphInTable(table, nodeId);
   });
+
+
   // Listen for topology updates and rebuild the node table
   onTopologyUpdate((updatedTopology: Topology) => {
-    console.log("Current topology:", updatedTopology);
-    nodeTables = vectorDistanceAlgorithm(updatedTopology);
-    if(pressedNodeId) {
-      // If a node was pressed, update its table
-      let table: NodeTable | undefined = NodeTable.findByNodeId(nodeTables, pressedNodeId);
-      graphInTable(table, pressedNodeId);
+    const updatedIds = updatedTopology.nodes.map(n => n.id);
+
+  // 1) Eliminar tablas de nodos borrados
+  nodeTables = nodeTables.filter(table => updatedIds.includes(table.nodeId));
+
+  // 2) Añadir tablas de nodos nuevos
+  updatedTopology.nodes.forEach(node => {
+    if (!NodeTable.existsInArray(nodeTables, node.id)) {
+      nodeTables.push(constructBaseTableForNode(node.id, updatedTopology));
     }
   });
+
+  // 3) Actualizar los pesos directos en las tablas existentes (vecinos e infinito)
+  nodeTables.forEach(table => {
+    const base = constructBaseTableForNode(table.nodeId, updatedTopology);
+    base.vector.forEach((info, destId) => {
+      // solo sobreescribimos si es el mismo nodo (dist=0) o un vecino directo
+      if (info.distance === 0 || info.fromNodeId === destId) {
+        table.vector.set(destId, info);
+      }
+      // agregamos destinos nuevos con infinito
+      if (!table.vector.has(destId)) {
+        table.vector.set(destId, info);
+      }
+    });
+  });
+
+  // 4) Re-ejecutar el algoritmo de vector distancia para propagar cambios
+  distanceVectorAlgorithm(pressedNodeId || "0", nodeTables, updatedTopology);
+
+  // 5) Si había un nodo seleccionado, refrescar su tabla
+  if (pressedNodeId) {
+    graphInTable(
+      nodeTables.find(t => t.nodeId === pressedNodeId),
+      pressedNodeId
+    );
+  }
+  });
+  
+
+
 });
+
 
 function graphInTable(table: NodeTable | undefined, nodeId: string) {
   if (table) {
@@ -142,9 +177,9 @@ function graphInTable(table: NodeTable | undefined, nodeId: string) {
           <table class="distance-table">
             <thead>
               <tr>
-                <th>Nodo X</th>
-                <th>Distancia a Nodo X</th>
+                <th>Nodo llega a</th>
                 <th>Por Medio de</th>
+                <th>Distancia</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -155,8 +190,8 @@ function graphInTable(table: NodeTable | undefined, nodeId: string) {
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${targetNodeId}</td>
-            <td>${distanceInfo.distance}</td>
             <td>${distanceInfo.fromNodeId}</td>
+            <td>${distanceInfo.distance}</td>
           `;
           if (tbody) {
             tbody.appendChild(tr);
@@ -177,4 +212,38 @@ function graphInTable(table: NodeTable | undefined, nodeId: string) {
             `;
             }
     }
+}
+
+
+
+function distanceVectorAlgorithm(updatingNodeTable:string="0",nodeTables: NodeTable[],topology:Topology): NodeTable[] {
+    //Bajo un nodo cualquiera, despues se propaga
+    let neighborTables = getNeighborTables(updatingNodeTable, nodeTables,topology);
+    let nodeTable = getTableForNode(updatingNodeTable,nodeTables,topology);
+    let entries = new Map<string,DistanceToNode>(nodeTable.vector);
+    let mustDisperse = false;
+
+    for(const entry of entries.keys()) {//por cada entrada de la tabla de ese nodo D(entryNode)
+        let distanceArray: DistanceToNode[] = []
+        //para cada vecino de ese nodo, calculamos la distancia a entryNode
+        for(const neighbor of neighborTables){ 
+            let distanceToEntry: number = nodeTable.vector.get(neighbor.nodeId)?.distance! + neighbor.vector.get(entry)?.distance!
+            distanceArray.push({fromNodeId:neighbor.nodeId,distance:distanceToEntry})
+        }
+        //obtenemos el minimo de las distancias
+        let minimumDistanceToNode:DistanceToNode = distanceArray.reduce((min,next)=>next.distance < min!.distance ? next:min,entries.get(entry)!);
+        //verificamos si hubo actualización
+        //si la hubo guardamos que nodos vecinos deben esparcir la actualización
+        if(minimumDistanceToNode.fromNodeId !== nodeTable.vector.get(entry)?.fromNodeId){
+            nodeTable.vector.set(entry,minimumDistanceToNode);
+            mustDisperse = true;
+        }
+    }
+    if(mustDisperse){
+        for(const neighbor of neighborTables){
+            distanceVectorAlgorithm(neighbor.nodeId,nodeTables,topology);
+        }
+    }
+
+  return nodeTables;
 }
