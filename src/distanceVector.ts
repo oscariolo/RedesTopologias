@@ -117,6 +117,7 @@ window.addEventListener('load', () => {
   onNodePress((nodeId: string) => {
     pressedNodeId = nodeId;
     //Obtenemos la tabla del nodo presionado
+    distanceVectorAlgorithm(pressedNodeId, nodeTables, getCurrentTopology());
     let table: NodeTable| undefined = NodeTable.findByNodeId(nodeTables, nodeId);
     graphInTable(table, nodeId);
   });
@@ -152,7 +153,7 @@ window.addEventListener('load', () => {
   });
 
   // 4) Re-ejecutar el algoritmo de vector distancia para propagar cambios
-  distanceVectorAlgorithm(pressedNodeId || "0", nodeTables, updatedTopology);
+  distanceVectorAlgorithm(pressedNodeId || nodeTables[0].nodeId, nodeTables, updatedTopology);
 
   // 5) Si había un nodo seleccionado, refrescar su tabla
   if (pressedNodeId) {
