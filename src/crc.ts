@@ -15,7 +15,7 @@ function binaryDivision(dividend: string, divisor: string): string {
     return dividendBits.slice(dividendLength - divisorLength + 1).join('');
 }
 
-function simulateError(trama: string, error_p:number=0.5):string {
+export function simulateError(trama: string, error_p:number=0.5):string {
     // Simulate a single bit error by flipping a random bit
     //Aleatoreamente devuelve la misma trama sin error 50% de las veces
     if (Math.random() < error_p) {
