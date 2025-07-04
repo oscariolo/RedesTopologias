@@ -10,18 +10,21 @@
   </head>
   <body>
     <main class="container">
-      <h1>Redes de computador</h1>
-      <h1>Trabajo final</h1>
       <div class="crc-container">        
         <input class="input-container" type="text" id="binaryInput" placeholder="Enter binary string" />
       </div>
-      <div id="matrixContainer" style="margin-top:1rem;">
+      <div class="results-container">
+        <span id="codedInput" class="result-text"></span>
+        <span id="erroredInput" class="result-text"></span>       <!-- added -->
+        <span id="calculatedCodes" class="result-text"></span>
+        <span id="receiverCodes" class="result-text"></span>
+        <span id="errorIndex" class="result-text red-text"></span> <!-- added -->
+        <span id="correctedInput" class="result-text"></span>     <!-- added -->
       </div>
-      <div class="options">
-        <button id="playButton" class="commonButton">Play</button>
-        <button class="commonButton" id="backToMenu" onclick="window.history.back()">Regresar</button>
-      </div>
-      
+        <div class="options">
+          <button id="playButton" class="commonButton">Play</button>
+          <button class="commonButton" id="backToMenu" onclick="window.history.back()">Regresar</button>
+        </div>
     </main>
   </body>
 </html>

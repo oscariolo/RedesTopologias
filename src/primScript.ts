@@ -4,8 +4,8 @@ import { drawTopology, getCurrentTopology, getDrawnNodes, setCanvas } from "./to
 const canvas = document.getElementById('graphCanvas') as HTMLCanvasElement;
 setCanvas(canvas);
 
-function buildAdjacencyList(topology: Topology): Map<number, { to: number; weight: number }[]> {
-  const adj = new Map<number, { to: number; weight: number }[]>();
+function buildAdjacencyList(topology: Topology): Map<string, { to: string; weight: number }[]> {
+  const adj = new Map<string, { to: string; weight: number }[]>();
   topology.nodes.forEach(node => adj.set(node.id, []));
   topology.edges.forEach(edge => {
     adj.get(edge.from)?.push({ to: edge.to, weight: edge.weight });
@@ -14,13 +14,13 @@ function buildAdjacencyList(topology: Topology): Map<number, { to: number; weigh
   return adj;
 }
 
-function primAlgorithm(topology: Topology, startId: number): TopologyEdge[] {
+function primAlgorithm(topology: Topology, startId: string): TopologyEdge[] {
   const adj = buildAdjacencyList(topology);
   const mst: TopologyEdge[] = [];
-  const visited = new Set<number>();
+  const visited = new Set<string>();
   visited.add(startId);
   
-  let candidateEdges: { from: number; to: number; weight: number }[] = [
+  let candidateEdges: { from: string; to: string; weight: number }[] = [
     ...(adj.get(startId) || []).map(e => ({ from: startId, to: e.to, weight: e.weight }))
   ];
   
@@ -48,16 +48,11 @@ window.addEventListener('load', () => {
   runAlgoBtn?.addEventListener('click', () => {
     const startInputRaw = (document.getElementById('startNodeInput') as HTMLInputElement)?.value;
     const startInput = startInputRaw.trim();
-    let startId: number;
-    if (startInput !== "") {
-      const parsedStart = parseInt(startInput, 10);
-      if (!isNaN(parsedStart)) {
-        startId = parsedStart;
-      } else {
-        startId = getDrawnNodes()[0]?.id ?? 0;
-      }
+    let startId: string;
+    if (startInput === "") {
+      startId = getDrawnNodes()[0]?.id
     } else {
-      startId = getDrawnNodes()[0]?.id ?? 0;
+      startId = startInput
     }
     const topology = getCurrentTopology();
     const algorithmEdges = primAlgorithm(topology, startId);

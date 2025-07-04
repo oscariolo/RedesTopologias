@@ -181,6 +181,8 @@
 
 /* New results container styling */
 .results-container {
+    display: flex;
+    align-self: center;
     width: 300px;
     margin-top: 1rem;
     padding: 1rem;
@@ -225,6 +227,15 @@
 .distance-table thead tr {
   background-color: #233261;
   color: #ffffff;
+}
+
+.parity-bit {
+  color: #24c8db;
+  font-weight: bold;
+}
+
+.error-bit {
+  background-color: yellow;
 }
 
 

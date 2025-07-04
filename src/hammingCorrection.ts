@@ -61,27 +61,70 @@ function runHammingCorrection() {
    
     //calculamos y obtenemos la trama con codigo de hamming
     const codedInput = hammingCode(data);
-    
-    //simulamos error
-    const errored_input = simulateError(codedInput);  
-
-
-    //simulamos que llega al receptor, el cual primero extrae y realiza su propio calculo
-    const receiver_codes = takeBits(errored_input,{takeOnlyParity:true})
+    const errored_input = simulateError(codedInput);
+    const receiver_codes = takeBits(errored_input,{takeOnlyParity:true});
     const receiver_t = takeBits(errored_input,{});
-
     const calculated_codes = takeBits(hammingCode(receiver_t),{takeOnlyParity:true});
-    
     const faulty_bit_index = getHammingIndex(calculated_codes,receiver_codes);
 
-    
+    // helper to wrap bits
+    const wrapBits = (str: string, highlightFn: (idx: number)=>string) =>
+      str.split('').map((bit, i) => highlightFn(i)).join('');
 
+    const parityHighlight = (i: number) =>
+      isPowerOfTwo(i+1)
+        ? `<span class="parity-bit">${codedInput[i]}</span>`
+        : `<span>${codedInput[i]}</span>`;
 
+    const errorHighlight = (i: number) =>
+      i+1 === faulty_bit_index
+        ? `<span class="error-bit">${errored_input[i]}</span>`
+        : `<span>${errored_input[i]}</span>`;
 
+    // update UI
+    const codedEl = document.getElementById('codedInput')!;
+    codedEl.innerHTML = `Coded: ${wrapBits(codedInput, parityHighlight)}`;
+    codedEl.classList.add('fade-in');
 
+    const erroredEl = document.getElementById('erroredInput')!;
+    erroredEl.innerHTML = `Errored: ${wrapBits(errored_input, errorHighlight)}`;
+    erroredEl.classList.add('fade-in');
 
+    const calcEl = document.getElementById('calculatedCodes')!;
+    calcEl.textContent = `Calculated Codes: ${calculated_codes}`;
+    calcEl.classList.add('fade-in');
 
-    // …update UI as needed
+    const recvEl = document.getElementById('receiverCodes')!;
+    recvEl.textContent = `Receiver Codes: ${receiver_codes}`;
+    recvEl.classList.add('fade-in');
+
+    if (faulty_bit_index !== -1) {
+      const errIdxEl = document.getElementById('errorIndex')!;
+      errIdxEl.textContent = `Error at position: ${faulty_bit_index}`;
+      errIdxEl.classList.add('fade-in');
+
+      // correct bit
+      const corrected = errored_input.split('');
+      corrected[faulty_bit_index - 1] =
+        corrected[faulty_bit_index - 1] === '0' ? '1' : '0';
+      // highlight parity in corrected string too
+      const correctedStr = corrected.join('');
+      const correctedWrap = (i: number) =>
+        isPowerOfTwo(i+1)
+          ? `<span class="parity-bit">${correctedStr[i]}</span>`
+          : `<span>${correctedStr[i]}</span>`;
+      const corrEl = document.getElementById('correctedInput')!;
+      corrEl.innerHTML = `Corrected: ${wrapBits(correctedStr, correctedWrap)}`;
+      corrEl.classList.add('fade-in');
+    } else {
+      const errIdxEl = document.getElementById('errorIndex')!;
+      errIdxEl.textContent = 'No errors detected.';
+      errIdxEl.classList.add('fade-in');
+
+      const corrEl = document.getElementById('correctedInput')!;
+      corrEl.textContent = '';
+      corrEl.classList.remove('fade-in');
+    }
 }
 
 window.addEventListener('load', () => {
