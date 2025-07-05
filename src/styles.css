@@ -16,13 +16,14 @@
 
 .container {
   margin: 0;
-  height: 100vh;
+  min-height: 100vh;
   width: 100vw;
   display: flex;
   flex-direction: column;
   justify-content: center;
   text-align: center;
   color: #ffffff;
+  overflow-y: auto;
 }
 
 .canvasContainer {
@@ -35,9 +36,9 @@
 }
 
 #graphCanvas{
+  margin-top: 2rem;
   width: 70vw;
   height: 60vh;
-  /* 50% of the viewport height */
   border-radius: 8px;
   background-color: #f0f0f0;
 }
