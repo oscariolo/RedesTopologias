@@ -142,6 +142,30 @@ export function drawTopology(topology: Topology, algorithmEdges?: TopologyEdge[]
 
 window.addEventListener('load', () => {
   
+  canvas.width = canvas.clientWidth
+  canvas.height = canvas.clientHeight;
+  
+  window.addEventListener('resize', () => {
+      if (!canvas) return;
+      // remember old size
+      const oldW = canvas.width;
+      const oldH = canvas.height;
+      // compute new size
+      const newW = canvas.clientWidth;
+      const newH = canvas.clientHeight;
+      // remap every node so it keeps its relative position
+      drawnNodes = drawnNodes.map(n => ({
+        ...n,
+        x: n.x / oldW * newW,
+        y: n.y / oldH * newH
+      }));
+      // apply new canvas size
+      canvas.width = newW;
+      canvas.height = newH;
+      // redraw with updated positions
+      drawTopology(getCurrentTopology());
+    });
+  
   canvas.addEventListener('pointerdown', (e: PointerEvent) => {
     if(e.button !== 0) return; // Only handle left button clicks
     const rect = canvas.getBoundingClientRect();

@@ -17,7 +17,7 @@
 .container {
   margin: 0;
   height: 100vh;
-  width: 100%;
+  width: 100vw;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -25,10 +25,19 @@
   color: #ffffff;
 }
 
+.canvasContainer {
+  display: flex;
+  align-items: center;
+  width: 100vw;
+  height: 100vh;
+  border-radius: 20px;
+  background-color: #0a162f;
+}
+
 #graphCanvas{
-  width: 80%;    /* 80% of its container's width */
-  height: 50vh;  /* 50% of the viewport height */
-  border: 1px solid #ccc;
+  width: 70vw;
+  height: 60vh;
+  /* 50% of the viewport height */
   border-radius: 8px;
   background-color: #f0f0f0;
 }

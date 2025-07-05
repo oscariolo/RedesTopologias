@@ -22,16 +22,5 @@
       </div> 
     </main>
     
-    <!-- Inline script to update the canvas internal dimensions on load and resize -->
-    <script>
-      const canvas = document.getElementById("graphCanvas");
-      function resizeCanvas() {
-        // Match the canvas's internal width/height to its CSS dimensions.
-        canvas.width = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
-      }
-      window.addEventListener("load", resizeCanvas);
-      window.addEventListener("resize", resizeCanvas);
-    </script>
   </body>
 </html>

@@ -49,7 +49,7 @@ interface DistanceToNode{
   fromNodeId: string; //id del nodo desde el cual se calcula la distancia
 }
 
-function getNeighbors(nodeId: string, topology: Topology): TopologyEdge[] {
+export function getNeighbors(nodeId: string, topology: Topology): TopologyEdge[] {
   return topology.edges.filter(edge => edge.from === nodeId || edge.to === nodeId);
 }
 
