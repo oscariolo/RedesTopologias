@@ -174,7 +174,7 @@ function graphInTable(table: NodeTable | undefined, nodeId: string) {
       const tableElement = document.getElementById('nodeTable');
       if (tableElement) {
         tableElement.innerHTML = `
-          <h3>Node Tabla de nodo ${nodeId}</h3>
+          <h3>Tabla de nodo ${nodeId}</h3>
           <table class="distance-table">
             <thead>
               <tr>
