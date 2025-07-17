@@ -59,6 +59,12 @@ function runHammingCorrection() {
     const inputField = document.getElementById('binaryInput') as HTMLInputElement;
     const data = inputField.value;
    
+    // Display the Hamming calculation table
+    const tableContainer = document.getElementById('hammingTableContainer');
+    if (tableContainer) {
+        tableContainer.innerHTML = createHammingTable(data);
+    }
+    
     //calculamos y obtenemos la trama con codigo de hamming
     const codedInput = hammingCode(data);
     const errored_input = simulateError(codedInput);
@@ -69,7 +75,7 @@ function runHammingCorrection() {
 
     // helper to wrap bits
     const wrapBits = (str: string, highlightFn: (idx: number)=>string) =>
-      str.split('').map((bit, i) => highlightFn(i)).join('');
+      str.split('').map((_, i) => highlightFn(i)).join('');
 
     const parityHighlight = (i: number) =>
       isPowerOfTwo(i+1)
@@ -125,6 +131,90 @@ function runHammingCorrection() {
       corrEl.textContent = '';
       corrEl.classList.remove('fade-in');
     }
+
+    // Update Hamming table display
+    const tableEl = document.getElementById('hammingTable')!;
+    tableEl.innerHTML = createHammingTable(data);
+    tableEl.classList.add('fade-in');
+}
+
+// Generate Hamming calculation table
+function createHammingTable(data: string): string {
+    const bits = data.trim().split('').map(ch => Number(ch));
+    const n = bits.length;
+    
+    // Calculate required parity bits using iterative approach
+    let r = 1;
+    while (2 ** r < n + r + 1) {
+        r++;
+    }
+    
+    // Create array with parity bit positions as 0s
+    const hammingBits: number[] = [];
+    let dataIndex = 0;
+    
+    for (let pos = 1; pos <= n + r; pos++) {
+        if (isPowerOfTwo(pos)) {
+            hammingBits.push(0); // Parity bit placeholder
+        } else {
+            hammingBits.push(bits[dataIndex++]);
+        }
+    }
+    
+    let tableHTML = `
+        <h3>Tabla de Cálculo de Código Hamming</h3>
+        <table class="hamming-table">
+            <thead>
+                <tr>
+                    <th>Bit de Paridad</th>`;
+    
+    // Header with bit positions
+    for (let i = 0; i < hammingBits.length; i++) {
+        const pos = i + 1;
+        tableHTML += `<th class="${isPowerOfTwo(pos) ? 'parity-position' : 'data-bit'}">P${pos}</th>`;
+    }
+    tableHTML += `<th>Resultado</th></tr></thead><tbody>`;
+    
+    // Calculate each parity bit
+    for (let i = 0; i <= Math.floor(Math.log2(hammingBits.length)); i++) {
+        const parityPos = 2 ** i;
+        if (parityPos > hammingBits.length) break;
+        
+        tableHTML += `<tr><td class="row-label">P${parityPos} (2^${i})</td>`;
+        
+        let parityValue = 0;
+        
+        // Show which bits are checked for this parity bit
+        for (let bitIndex = 0; bitIndex < hammingBits.length; bitIndex++) {
+            const pos = bitIndex + 1;
+            const isChecked = pos !== parityPos && ((pos & parityPos) !== 0);
+            
+            if (isChecked) {
+                parityValue ^= hammingBits[bitIndex];
+                tableHTML += `<td class="checked-bit">${hammingBits[bitIndex]}</td>`;
+            } else if (pos === parityPos) {
+                tableHTML += `<td class="parity-position">P${parityPos}</td>`;
+            } else {
+                tableHTML += `<td>-</td>`;
+            }
+        }
+        
+        // Set the calculated parity bit
+        hammingBits[parityPos - 1] = parityValue;
+        tableHTML += `<td class="parity-bit">${parityValue}</td></tr>`;
+    }
+    
+    // Final row showing the complete Hamming code
+    tableHTML += `<tr><td class="row-label"><strong>Código Final</strong></td>`;
+    for (let i = 0; i < hammingBits.length; i++) {
+        const pos = i + 1;
+        tableHTML += `<td class="${isPowerOfTwo(pos) ? 'parity-bit' : 'data-bit'}">${hammingBits[i]}</td>`;
+    }
+    tableHTML += `<td><strong>${hammingBits.join('')}</strong></td></tr>`;
+    
+    tableHTML += `</tbody></table>`;
+    
+    return tableHTML;
 }
 
 window.addEventListener('load', () => {

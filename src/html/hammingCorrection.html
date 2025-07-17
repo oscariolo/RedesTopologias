@@ -7,6 +7,48 @@
     <title>Redes Topologia y correccion de errores</title>
     <script type="module" src="/src/main.ts" defer></script>
     <script type="module" src="/src/hammingCorrection.ts" defer></script>
+    <style>
+      .hamming-table {
+        margin: 20px auto;
+        border-collapse: collapse;
+        background: white;
+        color: black;
+        font-family: monospace;
+        font-size: 14px;
+      }
+      .hamming-table th,
+      .hamming-table td {
+        border: 1px solid #ccc;
+        padding: 8px 12px;
+        text-align: center;
+        min-width: 30px;
+      }
+      .hamming-table th {
+        background-color: #f0f0f0;
+        font-weight: bold;
+      }
+      .hamming-table .parity-position {
+        background-color: #ffeb3b;
+        font-weight: bold;
+      }
+      .hamming-table .data-bit {
+        background-color: #e3f2fd;
+      }
+      .hamming-table .parity-bit {
+        background-color: #c8e6c9;
+        font-weight: bold;
+      }
+      .hamming-table .row-label {
+        background-color: #f5f5f5;
+        font-weight: bold;
+        text-align: left;
+        padding-left: 10px;
+      }
+      .hamming-table .checked-bit {
+        background-color: #ffcdd2;
+        font-weight: bold;
+      }
+    </style>
   </head>
   <body>
     <main class="container">
@@ -20,6 +62,9 @@
         <span id="receiverCodes" class="result-text"></span>
         <span id="errorIndex" class="result-text red-text"></span> <!-- added -->
         <span id="correctedInput" class="result-text"></span>     <!-- added -->
+      </div>
+      <div id="hammingTableContainer" class="tables-container">
+        <!-- Hamming calculation table will be inserted here -->
       </div>
         <div class="options">
           <button id="playButton" class="commonButton">Play</button>
