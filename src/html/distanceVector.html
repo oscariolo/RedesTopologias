@@ -6,6 +6,36 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Redes Topologia y correccion de errores</title>
     <script type="module" src="/src/distanceVector.ts" defer></script>
+    <style>
+      .steps-container {
+        margin-top: 20px;
+      }
+      .step-iteration {
+        margin-bottom: 30px;
+        border: 1px solid #ccc;
+        padding: 15px;
+        border-radius: 5px;
+      }
+      .tables-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 15px;
+        margin-top: 10px;
+      }
+      .node-table-container {
+        border: 1px solid #ddd;
+        padding: 10px;
+        border-radius: 3px;
+      }
+      .mini-table {
+        font-size: 0.9em;
+        width: 100%;
+      }
+      .mini-table th, .mini-table td {
+        padding: 4px 8px;
+        text-align: center;
+      }
+    </style>
   </head>
   <body>
     <main class="container">
@@ -15,6 +45,9 @@
       </div>
       <div id="nodeTable">
         <!-- Distance tables will be dynamically injected here -->
+      </div>
+      <div id="distanceVectorSteps">
+        <!-- Distance vector algorithm steps will be dynamically injected here -->
       </div>
       <div class="options">
         <button id="distanceVectorPlay" class="commonButton">Play</button>

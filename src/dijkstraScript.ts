@@ -1,14 +1,25 @@
 import { Topology, TopologyNode, TopologyEdge } from "./topology";
-import { drawTopology, getCurrentTopology, getDrawnNodes, setCanvas } from "./topologyDrawer";
+import { drawTopology, getCurrentTopology, setCanvas } from "./topologyDrawer";
+
+interface DijkstraStep {
+  iteration: number;
+  currentNode: string;
+  distances: Map<string, number>;
+  previous: Map<string, string | null>;
+  visited: Set<string>;
+  queue: string[];
+}
 
 let drawnNodes: TopologyNode[] = [];
 const canvas = document.getElementById('graphCanvas') as HTMLCanvasElement;
 setCanvas(canvas);
 // Dijkstra's algorithm to compute the shortest path from startId to finishId.
 // Función dijkstraAlgorithm: Calcula el camino más corto desde el nodo inicio hasta el nodo final utilizando el algoritmo de Dijkstra.
-function dijkstraAlgorithm(topology: Topology, startId: string, finishId: string): TopologyEdge[] {
+function dijkstraAlgorithm(topology: Topology, startId: string, finishId: string): { pathEdges: TopologyEdge[], steps: DijkstraStep[] } {
+  const steps: DijkstraStep[] = [];
+  
   // Construir la lista de adyacencia.
-  const adj = new Map<String, { to: string; weight: number }[]>();
+  const adj = new Map<string, { to: string; weight: number }[]>();
   topology.nodes.forEach(node => adj.set(node.id, []));
   topology.edges.forEach(edge => {
     adj.get(edge.from)?.push({ to: edge.to, weight: edge.weight });
@@ -26,12 +37,27 @@ function dijkstraAlgorithm(topology: Topology, startId: string, finishId: string
   
   // Usar un arreglo como cola de prioridad de nodos.
   let queue = topology.nodes.map(n => n.id);
+  const visited = new Set<string>();
+  let iteration = 0;
   
   while (queue.length > 0) {
     // Ordenar la cola según la distancia acumulada.
     queue.sort((a, b) => dist.get(a)! - dist.get(b)!);
     const u = queue.shift()!;
+    visited.add(u);
+    
+    // Guardar el estado actual como un paso
+    steps.push({
+      iteration: iteration++,
+      currentNode: u,
+      distances: new Map(dist),
+      previous: new Map(prev),
+      visited: new Set(visited),
+      queue: [...queue]
+    });
+    
     if (u === finishId) break; // Si llegamos al nodo final, terminamos.
+    
     // Relajar las aristas de los vecinos.
     const neighbors = adj.get(u) || [];
     for (const { to, weight } of neighbors) {
@@ -55,12 +81,54 @@ function dijkstraAlgorithm(topology: Topology, startId: string, finishId: string
   // Generar las aristas correspondientes al camino.
   const pathEdges: TopologyEdge[] = [];
   for (let i = 0; i < path.length - 1; i++) {
-    const edge = topology.edges.find(e =>
+    const edge = topology.edges.find((e: TopologyEdge) =>
       (e.from === path[i] && e.to === path[i + 1]) || (e.from === path[i + 1] && e.to === path[i])
     );
     pathEdges.push({ from: path[i], to: path[i + 1], weight: edge ? edge.weight : 0 });
   }
-  return pathEdges;
+  
+  return { pathEdges, steps };
+}
+
+function displayDijkstraSteps(steps: DijkstraStep[]) {
+  const tableElement = document.getElementById('dijkstraSteps');
+  if (tableElement) {
+    tableElement.innerHTML = `
+      <h3>Pasos del Algoritmo de Dijkstra</h3>
+      <table class="distance-table">
+        <thead>
+          <tr>
+            <th>Iteración</th>
+            <th>Nodo Actual</th>
+            <th>Visitados</th>
+            <th>Cola</th>
+            <th>Distancias</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    `;
+    const tbody = tableElement.querySelector("tbody");
+    steps.forEach((step) => {
+      const tr = document.createElement("tr");
+      const visitedNodes = Array.from(step.visited).join(", ");
+      const queueNodes = step.queue.join(", ");
+      const distances = Array.from(step.distances.entries())
+        .map(([node, dist]) => `${node}: ${dist === Infinity ? '∞' : dist}`)
+        .join(", ");
+      
+      tr.innerHTML = `
+        <td>${step.iteration}</td>
+        <td>${step.currentNode}</td>
+        <td>{${visitedNodes}}</td>
+        <td>[${queueNodes}]</td>
+        <td>${distances}</td>
+      `;
+      if (tbody) {
+        tbody.appendChild(tr);
+      }
+    });
+  }
 }
 
 window.addEventListener('load', () => {
@@ -88,8 +156,9 @@ window.addEventListener('load', () => {
     } else {
       finishId = drawnNodes[0]?.id ?? "0";
     }
-    const algorithmEdges = dijkstraAlgorithm(topology, startId,finishId);
-    drawTopology(topology, algorithmEdges);
+    const result = dijkstraAlgorithm(topology, startId, finishId);
+    drawTopology(topology, result.pathEdges);
+    displayDijkstraSteps(result.steps);
   });
 });
 
