@@ -1,4 +1,4 @@
-import { Topology, TopologyNode, TopologyEdge } from "./topology";
+import { Topology, TopologyEdge } from "./topology";
 import { drawTopology, getCurrentTopology, setCanvas } from "./topologyDrawer";
 
 interface DijkstraStep {
@@ -10,7 +10,6 @@ interface DijkstraStep {
   queue: string[];
 }
 
-let drawnNodes: TopologyNode[] = [];
 const canvas = document.getElementById('graphCanvas') as HTMLCanvasElement;
 setCanvas(canvas);
 // Dijkstra's algorithm to compute the shortest path from startId to finishId.
@@ -111,9 +110,12 @@ function displayDijkstraSteps(steps: DijkstraStep[]) {
     const tbody = tableElement.querySelector("tbody");
     steps.forEach((step) => {
       const tr = document.createElement("tr");
-      const visitedNodes = Array.from(step.visited).join(", ");
-      const queueNodes = step.queue.join(", ");
+      // Sort visited and queue nodes alphabetically
+      const visitedNodes = Array.from(step.visited).sort().join(", ");
+      const queueNodes = step.queue.sort().join(", ");
+      // Sort distances alphabetically by node ID
       const distances = Array.from(step.distances.entries())
+        .sort(([a], [b]) => a.localeCompare(b))
         .map(([node, dist]) => `${node}: ${dist === Infinity ? '∞' : dist}`)
         .join(", ");
       
@@ -137,25 +139,47 @@ window.addEventListener('load', () => {
     return;
   }
   const runAlgoBtn = document.getElementById('runAlgorithmBtn') as HTMLButtonElement;
-  // In the runAlgoBtn handler ensure that a start node of "0" is parsed correctly
   runAlgoBtn?.addEventListener('click', () => {
     const startInputRaw = (document.getElementById('startNodeInput') as HTMLInputElement)?.value;
     const endInputRaw = (document.getElementById('endNodeInput') as HTMLInputElement)?.value;
     const startInput = startInputRaw.trim();
     const endInput = endInputRaw.trim();
+    
+    const topology = getCurrentTopology();
+    
     let startId: string;
     if (startInput !== "") {
-      startId = startInput;
+      // Check if the node exists in the topology
+      if (topology.nodes.some(node => node.id === startInput)) {
+        startId = startInput;
+      } else {
+        alert(`Node "${startInput}" does not exist in the topology`);
+        return;
+      }
     } else {
-      startId = drawnNodes[0]?.id ?? "0";
+      // Use first available node if no input provided
+      startId = topology.nodes[0]?.id ?? "A";
     }
-    const topology = getCurrentTopology();
+    
     let finishId: string;
     if (endInput !== "") {
-      finishId = endInput;
+      // Check if the node exists in the topology
+      if (topology.nodes.some(node => node.id === endInput)) {
+        finishId = endInput;
+      } else {
+        alert(`Node "${endInput}" does not exist in the topology`);
+        return;
+      }
     } else {
-      finishId = drawnNodes[0]?.id ?? "0";
+      // Use second available node if no input provided, or first if only one node
+      finishId = topology.nodes[1]?.id ?? topology.nodes[0]?.id ?? "B";
     }
+    
+    if (topology.nodes.length < 2) {
+      alert("Please create at least 2 nodes to run Dijkstra algorithm");
+      return;
+    }
+    
     const result = dijkstraAlgorithm(topology, startId, finishId);
     drawTopology(topology, result.pathEdges);
     displayDijkstraSteps(result.steps);
