@@ -8,10 +8,18 @@ const canvas = document.getElementById('graphCanvas') as HTMLCanvasElement;
 setCanvas(canvas);
 
 interface DistanceVectorStep {
-  iteration: number;
+  stepNumber: number;
   updatingNode: string;
-  allTables: Map<string, Map<string, DistanceToNode>>;
+  nodeTableBefore: Map<string, DistanceToNode>;
+  nodeTableAfter: Map<string, DistanceToNode>;
   changesDetected: boolean;
+  description: string;
+}
+
+interface AlgorithmState {
+  allSteps: DistanceVectorStep[];
+  currentStepIndex: number;
+  isRunning: boolean;
 }
 
 
@@ -112,25 +120,62 @@ window.addEventListener('load', () => {
   }
   let nodeTables: NodeTable[] = [];
   let pressedNodeId: string | undefined;
+  let algorithmState: AlgorithmState = {
+    allSteps: [],
+    currentStepIndex: 0,
+    isRunning: false
+  };
 
   const playbtn = document.getElementById('distanceVectorPlay') as HTMLButtonElement;
   playbtn.addEventListener('click', () => {
-    // Clear the table display
-    const result = distanceVectorAlgorithm(pressedNodeId || "0", nodeTables, getCurrentTopology());
-    nodeTables = result.tables;
-    graphInTable(nodeTables.find(table => table.nodeId === pressedNodeId), pressedNodeId || "");
-    displayDistanceVectorSteps(result.steps);
+    if (!algorithmState.isRunning) {
+      // Start new algorithm run
+      if (pressedNodeId) {
+        const result = distanceVectorAlgorithm(pressedNodeId, nodeTables, getCurrentTopology());
+        nodeTables = result.tables;
+        algorithmState.allSteps = result.steps;
+        algorithmState.currentStepIndex = 0;
+        algorithmState.isRunning = true;
+        playbtn.textContent = 'Next Step';
+        
+        // Show first step
+        if (algorithmState.allSteps.length > 0) {
+          displayCurrentStep(algorithmState.allSteps[0]);
+        }
+      }
+    } else {
+      // Continue to next step
+      algorithmState.currentStepIndex++;
+      if (algorithmState.currentStepIndex < algorithmState.allSteps.length) {
+        displayCurrentStep(algorithmState.allSteps[algorithmState.currentStepIndex]);
+      } else {
+        // Algorithm finished
+        algorithmState.isRunning = false;
+        playbtn.textContent = 'Play';
+        graphInTable(nodeTables.find(table => table.nodeId === pressedNodeId), pressedNodeId || "");
+        displayDistanceVectorSteps(algorithmState.allSteps);
+      }
+    }
   });
 
 
   onNodePress((nodeId: string) => {
     pressedNodeId = nodeId;
-    //Obtenemos la tabla del nodo presionado
-    const result = distanceVectorAlgorithm(pressedNodeId, nodeTables, getCurrentTopology());
-    nodeTables = result.tables;
-    let table: NodeTable| undefined = NodeTable.findByNodeId(nodeTables, nodeId);
+    // Reset algorithm state when selecting a new node
+    algorithmState.isRunning = false;
+    algorithmState.currentStepIndex = 0;
+    algorithmState.allSteps = [];
+    playbtn.textContent = 'Play';
+    
+    // Show the initial table for the selected node
+    let table: NodeTable | undefined = getTableForNode(nodeId, nodeTables, getCurrentTopology());
     graphInTable(table, nodeId);
-    displayDistanceVectorSteps(result.steps);
+    
+    // Clear step display
+    const stepDisplay = document.getElementById('currentStepDisplay');
+    if (stepDisplay) {
+      stepDisplay.innerHTML = '<p>Presiona Play para comenzar el algoritmo paso a paso</p>';
+    }
   });
 
 
@@ -138,42 +183,52 @@ window.addEventListener('load', () => {
   onTopologyUpdate((updatedTopology: Topology) => {
     const updatedIds = updatedTopology.nodes.map(n => n.id);
 
-  // 1) Eliminar tablas de nodos borrados
-  nodeTables = nodeTables.filter(table => updatedIds.includes(table.nodeId));
+    // Reset algorithm state on topology change
+    algorithmState.isRunning = false;
+    algorithmState.currentStepIndex = 0;
+    algorithmState.allSteps = [];
+    playbtn.textContent = 'Play';
 
-  // 2) Añadir tablas de nodos nuevos
-  updatedTopology.nodes.forEach(node => {
-    if (!NodeTable.existsInArray(nodeTables, node.id)) {
-      nodeTables.push(constructBaseTableForNode(node.id, updatedTopology));
-    }
-  });
+    // 1) Eliminar tablas de nodos borrados
+    nodeTables = nodeTables.filter(table => updatedIds.includes(table.nodeId));
 
-  // 3) Actualizar los pesos directos en las tablas existentes (vecinos e infinito)
-  nodeTables.forEach(table => {
-    const base = constructBaseTableForNode(table.nodeId, updatedTopology);
-    base.vector.forEach((info, destId) => {
-      // solo sobreescribimos si es el mismo nodo (dist=0) o un vecino directo
-      if (info.distance === 0 || info.fromNodeId === destId) {
-        table.vector.set(destId, info);
-      }
-      // agregamos destinos nuevos con infinito
-      if (!table.vector.has(destId)) {
-        table.vector.set(destId, info);
+    // 2) Añadir tablas de nodos nuevos
+    updatedTopology.nodes.forEach(node => {
+      if (!NodeTable.existsInArray(nodeTables, node.id)) {
+        nodeTables.push(constructBaseTableForNode(node.id, updatedTopology));
       }
     });
-  });
 
-  // 4) Re-ejecutar el algoritmo de vector distancia para propagar cambios
-  const result = distanceVectorAlgorithm(pressedNodeId || nodeTables[0].nodeId, nodeTables, updatedTopology);
-  nodeTables = result.tables;
+    // 3) Actualizar los pesos directos en las tablas existentes (vecinos e infinito)
+    nodeTables.forEach(table => {
+      const base = constructBaseTableForNode(table.nodeId, updatedTopology);
+      base.vector.forEach((info, destId) => {
+        // solo sobreescribimos si es el mismo nodo (dist=0) o un vecino directo
+        if (info.distance === 0 || info.fromNodeId === destId) {
+          table.vector.set(destId, info);
+        }
+        // agregamos destinos nuevos con infinito
+        if (!table.vector.has(destId)) {
+          table.vector.set(destId, info);
+        }
+      });
+    });
 
-  // 5) Si había un nodo seleccionado, refrescar su tabla
-  if (pressedNodeId) {
-    graphInTable(
-      nodeTables.find(t => t.nodeId === pressedNodeId),
-      pressedNodeId
-    );
-  }
+    // 4) Si había un nodo seleccionado, refrescar su tabla inicial
+    if (pressedNodeId && NodeTable.existsInArray(nodeTables, pressedNodeId)) {
+      const table = getTableForNode(pressedNodeId, nodeTables, updatedTopology);
+      graphInTable(table, pressedNodeId);
+    }
+
+    // Clear displays
+    const stepDisplay = document.getElementById('currentStepDisplay');
+    if (stepDisplay) {
+      stepDisplay.innerHTML = '<p>Selecciona un nodo y presiona Play para comenzar</p>';
+    }
+    const stepsDisplay = document.getElementById('distanceVectorSteps');
+    if (stepsDisplay) {
+      stepsDisplay.innerHTML = '';
+    }
   });
   
 
@@ -199,7 +254,9 @@ function graphInTable(table: NodeTable | undefined, nodeId: string) {
           </table>
         `;
         const tbody = tableElement.querySelector("tbody");
-        table.vector.forEach((distanceInfo, targetNodeId) => {
+        // Sort entries alphabetically by node ID
+        const sortedEntries = Array.from(table.vector.entries()).sort(([a], [b]) => a.localeCompare(b));
+        sortedEntries.forEach(([targetNodeId, distanceInfo]) => {
           const tr = document.createElement("tr");
           tr.innerHTML = `
             <td>${targetNodeId}</td>
@@ -229,104 +286,160 @@ function graphInTable(table: NodeTable | undefined, nodeId: string) {
 
 
 
-function distanceVectorAlgorithm(updatingNodeTable:string="0",nodeTables: NodeTable[],topology:Topology): { tables: NodeTable[], steps: DistanceVectorStep[] } {
+function distanceVectorAlgorithm(startingNode: string = "0", nodeTables: NodeTable[], topology: Topology): { tables: NodeTable[], steps: DistanceVectorStep[] } {
     const steps: DistanceVectorStep[] = [];
-    let iteration = 0;
+    let stepNumber = 0;
     
-    // Initial step - capture starting state
-    steps.push({
-      iteration: iteration++,
-      updatingNode: updatingNodeTable,
-      allTables: captureTablesSnapshot(nodeTables),
-      changesDetected: false
-    });
+    // Create a queue of nodes to process
+    const nodesToProcess: string[] = [startingNode];
+    const processedNodes = new Set<string>();
     
-    //Bajo un nodo cualquiera, despues se propaga
-    let neighborTables = getNeighborTables(updatingNodeTable, nodeTables,topology);
-    let nodeTable = getTableForNode(updatingNodeTable,nodeTables,topology);
-    let entries = new Map<string,DistanceToNode>(nodeTable.vector);
-    let mustDisperse = false;
-
-    for(const entry of entries.keys()) {//por cada entrada de la tabla de ese nodo D(entryNode)
-        let distanceArray: DistanceToNode[] = []
-        //para cada vecino de ese nodo, calculamos la distancia a entryNode
-        for(const neighbor of neighborTables){ 
-            let distanceToEntry: number = nodeTable.vector.get(neighbor.nodeId)?.distance! + neighbor.vector.get(entry)?.distance!
-            distanceArray.push({fromNodeId:neighbor.nodeId,distance:distanceToEntry})
+    while (nodesToProcess.length > 0) {
+        const currentNodeId = nodesToProcess.shift()!;
+        
+        if (processedNodes.has(currentNodeId)) {
+            continue;
         }
-        //obtenemos el minimo de las distancias
-        let minimumDistanceToNode:DistanceToNode = distanceArray.reduce((min,next)=>next.distance < min!.distance ? next:min,entries.get(entry)!);
-        //verificamos si hubo actualización
-        //si la hubo guardamos que nodos vecinos deben esparcir la actualización
-        if(minimumDistanceToNode.fromNodeId !== nodeTable.vector.get(entry)?.fromNodeId){
-            nodeTable.vector.set(entry,minimumDistanceToNode);
-            mustDisperse = true;
+        
+        const nodeTable = getTableForNode(currentNodeId, nodeTables, topology);
+        const tableBefore = new Map<string, DistanceToNode>();
+        nodeTable.vector.forEach((value, key) => {
+            tableBefore.set(key, { distance: value.distance, fromNodeId: value.fromNodeId });
+        });
+        
+        const neighborTables = getNeighborTables(currentNodeId, nodeTables, topology);
+        let hasChanges = false;
+        
+        // Update distances for this node
+        for (const [destNode, currentInfo] of nodeTable.vector.entries()) {
+            if (destNode === currentNodeId) continue;
+            
+            let bestDistance = currentInfo.distance;
+            let bestNextHop = currentInfo.fromNodeId;
+            
+            // Check all neighbors for better paths
+            for (const neighbor of neighborTables) {
+                const distanceToNeighbor = nodeTable.vector.get(neighbor.nodeId)?.distance || Infinity;
+                const distanceFromNeighborToDest = neighbor.vector.get(destNode)?.distance || Infinity;
+                const totalDistance = distanceToNeighbor + distanceFromNeighborToDest;
+                
+                if (totalDistance < bestDistance) {
+                    bestDistance = totalDistance;
+                    bestNextHop = neighbor.nodeId;
+                    hasChanges = true;
+                }
+            }
+            
+            if (hasChanges && (bestDistance !== currentInfo.distance || bestNextHop !== currentInfo.fromNodeId)) {
+                nodeTable.vector.set(destNode, { distance: bestDistance, fromNodeId: bestNextHop });
+            }
+        }
+        
+        const tableAfter = new Map<string, DistanceToNode>();
+        nodeTable.vector.forEach((value, key) => {
+            tableAfter.set(key, { distance: value.distance, fromNodeId: value.fromNodeId });
+        });
+        
+        steps.push({
+            stepNumber: stepNumber++,
+            updatingNode: currentNodeId,
+            nodeTableBefore: tableBefore,
+            nodeTableAfter: tableAfter,
+            changesDetected: hasChanges,
+            description: `Actualizando tabla del nodo ${currentNodeId}`
+        });
+        
+        processedNodes.add(currentNodeId);
+        
+        // If changes were made, add neighbors to process queue
+        if (hasChanges) {
+            for (const neighbor of neighborTables) {
+                if (!processedNodes.has(neighbor.nodeId) && !nodesToProcess.includes(neighbor.nodeId)) {
+                    nodesToProcess.push(neighbor.nodeId);
+                }
+            }
         }
     }
     
-    // Capture step after processing this node
-    steps.push({
-      iteration: iteration++,
-      updatingNode: updatingNodeTable,
-      allTables: captureTablesSnapshot(nodeTables),
-      changesDetected: mustDisperse
-    });
-    
-    if(mustDisperse){
-        for(const neighbor of neighborTables){
-            const neighborResult = distanceVectorAlgorithm(neighbor.nodeId,nodeTables,topology);
-            steps.push(...neighborResult.steps);
-        }
-    }
-
     return { tables: nodeTables, steps };
 }
 
-function captureTablesSnapshot(nodeTables: NodeTable[]): Map<string, Map<string, DistanceToNode>> {
-  const snapshot = new Map<string, Map<string, DistanceToNode>>();
-  nodeTables.forEach(table => {
-    const tableSnapshot = new Map<string, DistanceToNode>();
-    table.vector.forEach((value, key) => {
-      tableSnapshot.set(key, { distance: value.distance, fromNodeId: value.fromNodeId });
-    });
-    snapshot.set(table.nodeId, tableSnapshot);
-  });
-  return snapshot;
+function displayCurrentStep(step: DistanceVectorStep) {
+  const stepDisplay = document.getElementById('currentStepDisplay');
+  if (stepDisplay) {
+    stepDisplay.innerHTML = `
+      <h3>Paso ${step.stepNumber} - ${step.description}</h3>
+      <div class="step-tables">
+        <div class="table-comparison">
+          <div class="before-after-container">
+            <div class="table-section">
+              <h4>Tabla ANTES - Nodo ${step.updatingNode}</h4>
+              <table class="distance-table mini-table">
+                <thead>
+                  <tr>
+                    <th>Destino</th>
+                    <th>Por Medio de</th>
+                    <th>Distancia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${Array.from(step.nodeTableBefore.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([dest, info]) => `
+                    <tr>
+                      <td>${dest}</td>
+                      <td>${info.fromNodeId}</td>
+                      <td>${info.distance === Infinity ? '∞' : info.distance}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+            <div class="arrow-section">
+              <div class="arrow">${step.changesDetected ? '➜ CAMBIOS' : '➜ SIN CAMBIOS'}</div>
+            </div>
+            <div class="table-section">
+              <h4>Tabla DESPUÉS - Nodo ${step.updatingNode}</h4>
+              <table class="distance-table mini-table">
+                <thead>
+                  <tr>
+                    <th>Destino</th>
+                    <th>Por Medio de</th>
+                    <th>Distancia</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${Array.from(step.nodeTableAfter.entries()).sort(([a], [b]) => a.localeCompare(b)).map(([dest, info]) => {
+                    const beforeInfo = step.nodeTableBefore.get(dest);
+                    const hasChanged = beforeInfo && (beforeInfo.distance !== info.distance || beforeInfo.fromNodeId !== info.fromNodeId);
+                    return `
+                      <tr ${hasChanged ? 'class="changed-row"' : ''}>
+                        <td>${dest}</td>
+                        <td>${info.fromNodeId}</td>
+                        <td>${info.distance === Infinity ? '∞' : info.distance}</td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+  }
 }
 
 function displayDistanceVectorSteps(steps: DistanceVectorStep[]) {
   const tableElement = document.getElementById('distanceVectorSteps');
   if (tableElement) {
     tableElement.innerHTML = `
-      <h3>Pasos del Algoritmo Vector Distancia</h3>
+      <h3>Resumen Completo del Algoritmo Vector Distancia</h3>
       <div class="steps-container">
         ${steps.map(step => `
           <div class="step-iteration">
-            <h4>Iteración ${step.iteration} - Actualizando Nodo ${step.updatingNode} ${step.changesDetected ? '(Cambios detectados)' : '(Sin cambios)'}</h4>
-            <div class="tables-grid">
-              ${Array.from(step.allTables.entries()).map(([nodeId, vector]) => `
-                <div class="node-table-container">
-                  <h5>Tabla del Nodo ${nodeId}</h5>
-                  <table class="distance-table mini-table">
-                    <thead>
-                      <tr>
-                        <th>Destino</th>
-                        <th>Por Medio de</th>
-                        <th>Distancia</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      ${Array.from(vector.entries()).map(([dest, info]) => `
-                        <tr>
-                          <td>${dest}</td>
-                          <td>${info.fromNodeId}</td>
-                          <td>${info.distance === Infinity ? '∞' : info.distance}</td>
-                        </tr>
-                      `).join('')}
-                    </tbody>
-                  </table>
-                </div>
-              `).join('')}
+            <h4>Paso ${step.stepNumber} - ${step.description} ${step.changesDetected ? '(Cambios detectados)' : '(Sin cambios)'}</h4>
+            <div class="step-summary">
+              <p><strong>Nodo actualizado:</strong> ${step.updatingNode}</p>
+              <p><strong>Cambios:</strong> ${step.changesDetected ? 'Sí' : 'No'}</p>
             </div>
           </div>
         `).join('')}

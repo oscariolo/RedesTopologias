@@ -7,6 +7,9 @@ let dragCurrentPos: { x: number; y: number } | null = null;
 let canvas: HTMLCanvasElement;
 let pointerDownPos: { x: number; y: number } | null = null;
 
+// Configuration for node ID format
+let useLetterIds: boolean = true; // Set to true for letters (A, B, C...), false for numbers (0, 1, 2...)
+
 // Callback system for topology updates
 type TopologyUpdateCallback = (topology: Topology) => void;
 let topologyUpdateCallbacks: TopologyUpdateCallback[] = [];
@@ -44,11 +47,40 @@ export function setCanvas(newCanvas: HTMLCanvasElement) {
     canvas = newCanvas;
 }
 
-function getNextNodeId(): string {
-  let id = 0;
-  const usedIds = new Set(drawnNodes.map(n => parseInt(n.id)));
-  while (usedIds.has(id)) { id++; }
-  return id.toString();
+export function setUseLetterIds(useLetters: boolean) {
+    useLetterIds = useLetters;
+}
+
+export function getUseLetterIds(): boolean {
+    return useLetterIds;
+}
+
+function getNextNodeId(useLetters: boolean = false): string {
+  if (useLetters) {
+    const usedIds = new Set(drawnNodes.map(n => n.id));
+    for (let i = 0; i < 26; i++) {
+      const letter = String.fromCharCode(65 + i); // 65 is ASCII for 'A'
+      if (!usedIds.has(letter)) {
+        return letter;
+      }
+    }
+    // If all A-Z are used, start with AA, AB, etc.
+    for (let i = 0; i < 26; i++) {
+      for (let j = 0; j < 26; j++) {
+        const letter = String.fromCharCode(65 + i) + String.fromCharCode(65 + j);
+        if (!usedIds.has(letter)) {
+          return letter;
+        }
+      }
+    }
+    return "A"; // fallback
+  } else {
+    // Default numeric behavior
+    let id = 0;
+    const usedIds = new Set(drawnNodes.map(n => parseInt(n.id)));
+    while (usedIds.has(id)) { id++; }
+    return id.toString();
+  }
 }
 
 export function getCurrentTopology(): Topology {
@@ -225,7 +257,7 @@ window.addEventListener('load', () => {
       const dx = posX - pointerDownPos.x;
       const dy = posY - pointerDownPos.y;
       if (Math.hypot(dx, dy) < 5) {
-        const newId = getNextNodeId();
+        const newId = getNextNodeId(useLetterIds);
         drawnNodes.push({ id: newId, x: posX, y: posY });
         topologyChanged = true;
       }
