@@ -35,6 +35,8 @@ function crcCheck(trama: string, generator: string): boolean {
 
 window.addEventListener('load', () => {
     const tramaInput = document.getElementById('tramaInput') as HTMLInputElement;
+    const generatorInput = document.getElementById('generatorInput') as HTMLInputElement;
+    const runAlgoBtn = document.getElementById('runAlgorithmBtn') as HTMLButtonElement;
     
     tramaInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
@@ -42,6 +44,14 @@ window.addEventListener('load', () => {
         runCRC();
       }
     });
+    generatorInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        // Execute your desired function here
+        runCRC();
+      }
+    });
+    runAlgoBtn?.addEventListener('click', runCRC);
+
  });
 
  function runCRC() {

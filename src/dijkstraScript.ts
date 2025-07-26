@@ -176,7 +176,7 @@ window.addEventListener('load', () => {
     }
     
     if (topology.nodes.length < 2) {
-      alert("Please create at least 2 nodes to run Dijkstra algorithm");
+      alert("Debe crear 2 nodos minimo para el algoritmo de Dijkstra");
       return;
     }
     

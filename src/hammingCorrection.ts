@@ -89,24 +89,24 @@ function runHammingCorrection() {
 
     // update UI
     const codedEl = document.getElementById('codedInput')!;
-    codedEl.innerHTML = `Coded: ${wrapBits(codedInput, parityHighlight)}`;
+    codedEl.innerHTML = `Trama resultante: ${wrapBits(codedInput, parityHighlight)}`;
     codedEl.classList.add('fade-in');
 
     const erroredEl = document.getElementById('erroredInput')!;
-    erroredEl.innerHTML = `Errored: ${wrapBits(errored_input, errorHighlight)}`;
+    erroredEl.innerHTML = `Error: ${wrapBits(errored_input, errorHighlight)}`;
     erroredEl.classList.add('fade-in');
 
     const calcEl = document.getElementById('calculatedCodes')!;
-    calcEl.textContent = `Calculated Codes: ${calculated_codes}`;
+    calcEl.textContent = `Código original: ${calculated_codes}`;
     calcEl.classList.add('fade-in');
 
     const recvEl = document.getElementById('receiverCodes')!;
-    recvEl.textContent = `Receiver Codes: ${receiver_codes}`;
+    recvEl.textContent = `Código calculado: ${receiver_codes}`;
     recvEl.classList.add('fade-in');
 
     if (faulty_bit_index !== -1) {
       const errIdxEl = document.getElementById('errorIndex')!;
-      errIdxEl.textContent = `Error at position: ${faulty_bit_index}`;
+      errIdxEl.textContent = `Error en posición: ${faulty_bit_index}`;
       errIdxEl.classList.add('fade-in');
 
       // correct bit
@@ -120,11 +120,11 @@ function runHammingCorrection() {
           ? `<span class="parity-bit">${correctedStr[i]}</span>`
           : `<span>${correctedStr[i]}</span>`;
       const corrEl = document.getElementById('correctedInput')!;
-      corrEl.innerHTML = `Corrected: ${wrapBits(correctedStr, correctedWrap)}`;
+      corrEl.innerHTML = `Trama corregida: ${wrapBits(correctedStr, correctedWrap)}`;
       corrEl.classList.add('fade-in');
     } else {
       const errIdxEl = document.getElementById('errorIndex')!;
-      errIdxEl.textContent = 'No errors detected.';
+      errIdxEl.textContent = 'No se ha generado errores';
       errIdxEl.classList.add('fade-in');
 
       const corrEl = document.getElementById('correctedInput')!;
