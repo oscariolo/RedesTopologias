@@ -12,7 +12,6 @@ interface DijkstraStep {
 
 const canvas = document.getElementById('graphCanvas') as HTMLCanvasElement;
 setCanvas(canvas);
-// Dijkstra's algorithm to compute the shortest path from startId to finishId.
 // Función dijkstraAlgorithm: Calcula el camino más corto desde el nodo inicio hasta el nodo final utilizando el algoritmo de Dijkstra.
 function dijkstraAlgorithm(topology: Topology, startId: string, finishId: string): { pathEdges: TopologyEdge[], steps: DijkstraStep[] } {
   const steps: DijkstraStep[] = [];

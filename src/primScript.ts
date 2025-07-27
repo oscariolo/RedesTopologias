@@ -47,13 +47,32 @@ function primAlgorithm(topology: Topology, startId: string): { mstEdges: Topolog
   while (visited.size < topology.nodes.length && candidateEdges.length > 0) {
     candidateEdges.sort((a, b) => a.weight - b.weight);
     const edge = candidateEdges.shift()!;
-    
-    if (visited.has(edge.to)) continue;
-    
+
+    // If the destination is already visited, skip and do NOT record as added
+    if (visited.has(edge.to)) {
+      // Optionally, record a "skipped" step for clarity
+      steps.push({
+        iteration: iteration++,
+        currentEdge: edge,
+        mst: [...mst],
+        visited: new Set(visited),
+        candidateEdges: [...candidateEdges]
+      });
+      continue;
+    }
+
+    // Add edge to MST and mark node as visited
     mst.push(edge);
     visited.add(edge.to);
-    
-    // Save step after adding edge
+
+    // Add new candidate edges from the newly visited node
+    (adj.get(edge.to) || []).forEach(nextEdge => {
+      if (!visited.has(nextEdge.to)) {
+        candidateEdges.push({ from: edge.to, to: nextEdge.to, weight: nextEdge.weight });
+      }
+    });
+
+    // Record the step after updating candidates
     steps.push({
       iteration: iteration++,
       currentEdge: edge,
@@ -61,12 +80,9 @@ function primAlgorithm(topology: Topology, startId: string): { mstEdges: Topolog
       visited: new Set(visited),
       candidateEdges: [...candidateEdges]
     });
-    
-    (adj.get(edge.to) || []).forEach(nextEdge => {
-      if (!visited.has(nextEdge.to)) {
-        candidateEdges.push({ from: edge.to, to: nextEdge.to, weight: nextEdge.weight });
-      }
-    });
+
+    // If all nodes are now visited, break immediately
+    if (visited.size === topology.nodes.length) break;
   }
   
   return { mstEdges: mst, steps };
