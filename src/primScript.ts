@@ -97,7 +97,7 @@ function displayPrimSteps(steps: PrimStep[]) {
         <thead>
           <tr>
             <th>Iteración</th>
-            <th>Arista Añadida</th>
+            <th>Arista seleccionada</th>
             <th>Nodos Visitados</th>
             <th>Aristas Candidatas</th>
             <th>MST Actual</th>
