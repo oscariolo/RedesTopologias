@@ -26,12 +26,6 @@ export function simulateError(trama: string, error_p:number=0.5):string {
     return trama.substring(0, errorIndex) + errorBit + trama.substring(errorIndex + 1);
 }
 
-function crcCheck(trama: string, generator: string): boolean {
-    // Perform CRC check
-    let remainder = binaryDivision(trama, generator);
-    return remainder === '0'.repeat(generator.length - 1); // Check if remainder is all zeros
-}
-
 
 window.addEventListener('load', () => {
     const tramaInput = document.getElementById('tramaInput') as HTMLInputElement;
